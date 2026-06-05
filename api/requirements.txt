@@ -1,0 +1,9 @@
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+pydantic-settings==2.*
+httpx==0.28.*
+pyyaml==6.*
+numpy==1.24.*
+prometheus-client==0.21.*
+structlog==24.*
+pytest==8.*

@@ -1,0 +1,68 @@
+version: "1.0"
+
+devices:
+  - id: machine_inspection
+    type: vision_inspection
+    line: line_packaging
+    aliases:
+      - "혼류 포장 외관 비전 검사기"
+      - "포장 외관 비전 검사기"
+      - "포장 비전 검사기"
+      - "외관 비전 검사기"
+      - "비전 검사기"
+      - "외관 검사기"
+      - "검사기"
+    capabilities:
+      - machine.start
+      - machine.stop
+      - machine.emergency_stop
+      - machine.status.read
+      - vision.model.change
+    components:
+      - id: camera
+        type: camera
+        aliases:
+          - "카메라"
+          - "camera"
+        capabilities:
+          - camera.exposure.set
+          - camera.gain.set
+
+      - id: led_light
+        type: led_light
+        aliases:
+          - "조명"
+          - "라이트"
+          - "led"
+          - "LED"
+          - "엘이디"
+        capabilities:
+          - light.intensity.set
+
+      - id: robot
+        type: robot
+        aliases:
+          - "로봇"
+          - "robot"
+          - "로보트"
+        capabilities:
+          - robot.speed.set
+          - robot.status.read
+
+      - id: plc
+        type: plc
+        aliases:
+          - "PLC"
+          - "Plc"
+          - "plc"
+          - "피엘씨"
+        capabilities:
+          - plc.status.read
+          - plc.reset
+          - plc.bring_in
+          - plc.align
+          - plc.up
+          - plc.rotate
+          - plc.down
+          - plc.flip
+          - plc.send_out

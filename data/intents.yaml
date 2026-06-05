@@ -1,0 +1,376 @@
+version: "1.0"
+
+intents:
+  - name: start_machine
+    description: "장비를 시작한다."
+    target_scope: equipment
+    required_capability: machine.start
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+    seed_utterances:
+      - "장비 시작해"
+      - "설비 가동해"
+      - "장비 스타트"
+      - "장비 start"
+
+  - name: stop_machine
+    description: "장비를 정지한다."
+    target_scope: equipment
+    required_capability: machine.stop
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+    seed_utterances:
+      - "장비 멈춰"
+      - "설비 정지"
+      - "장비 스탑"
+      - "장비 stop"
+
+  - name: emergency_stop
+    description: "장비를 비상 정지한다."
+    target_scope: equipment
+    required_capability: machine.emergency_stop
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+    seed_utterances:
+      - "장비 비상 정지"
+      - "비상정지해"
+      - "설비 긴급 정지"
+      - "emergency stop"
+
+  - name: check_status
+    description: "장비 상태를 조회한다."
+    target_scope: equipment
+    required_capability: machine.status.read
+    is_risky: false
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+    seed_utterances:
+      - "장비 상태 알려줘"
+      - "설비 상태 확인해"
+      - "장비 상태 보여줘"
+      - "상태 확인해"
+
+  - name: change_model
+    description: "비전 검사 모델을 변경한다."
+    target_scope: equipment
+    required_capability: vision.model.change
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: model_name
+        type: string
+        required: true
+    seed_utterances:
+      - "장비 모델 A로 바꿔"
+      - "설비 모델 B로 변경해"
+      - "모델 변경해"
+      - "모델 A로 전환해"
+
+  - name: set_light_intensity
+    description: "조명 밝기를 설정한다."
+    target_scope: component
+    target_component_type: led_light
+    required_capability: light.intensity.set
+    is_risky: false
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "led_light"
+      - name: value
+        type: integer
+        required: true
+        min: 0
+        max: 255
+    seed_utterances:
+      - "조명 밝기 250으로 올려"
+      - "조명 150으로 맞춰"
+      - "led 조명 밝기 조정해"
+
+  - name: set_camera_exposure
+    description: "카메라 exposure 값을 설정한다."
+    target_scope: component
+    target_component_type: camera
+    required_capability: camera.exposure.set
+    is_risky: false
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "camera"
+      - name: value
+        type: integer
+        required: true
+        min: 100
+        max: 100000
+    seed_utterances:
+      - "카메라 노출값 800으로 바꿔"
+      - "camera exposure 1200으로 설정해"
+      - "노출 1000으로 맞춰"
+
+  - name: set_camera_gain
+    description: "카메라 gain 값을 설정한다."
+    target_scope: component
+    target_component_type: camera
+    required_capability: camera.gain.set
+    is_risky: false
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "camera"
+      - name: value
+        type: number
+        required: true
+        min: 0
+        max: 100
+    seed_utterances:
+      - "카메라 게인 10으로 설정해"
+      - "camera gain 5로 바꿔"
+      - "게인값 조정해"
+
+  - name: set_robot_speed
+    description: "로봇 속도를 설정한다."
+    target_scope: component
+    target_component_type: robot
+    required_capability: robot.speed.set
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "robot"
+      - name: value
+        type: integer
+        required: true
+        min: 1
+        max: 100
+      - name: unit
+        type: enum
+        required: false
+        values: ["percent"]
+        default: "percent"
+    seed_utterances:
+      - "로봇 속도 60으로 올려"
+      - "robot 속도 30퍼센트로 설정해"
+      - "로보트 속도 조정해"
+
+  - name: check_plc_status
+    description: "PLC 상태를 조회한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.status.read
+    is_risky: false
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 상태 알려줘"
+      - "피엘씨 상태 확인해"
+      - "plc 상태 보여줘"
+
+  - name: plc_reset
+    description: "PLC를 리셋한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.reset
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 리셋해"
+      - "피엘씨 reset"
+      - "plc 초기화해"
+
+  - name: plc_bring_in
+    description: "PLC 투입 동작을 실행한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.bring_in
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 제품 투입해"
+      - "피엘씨 제품 투입 동작 실행해"
+
+  - name: plc_align
+    description: "PLC 정렬 동작을 실행한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.align
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 정렬해"
+      - "피엘씨 정렬 동작 실행해"
+      - "plc align"
+      - "plc 제품 얼라인해"
+      - "피엘씨 얼라인"
+
+  - name: plc_move_up
+    description: "PLC 상승 동작을 실행한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.up
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 제품 올려"
+      - "PLC 제품 업"
+      - "피엘씨 제품 업"
+      - "피엘씨 제품 상승"
+      - "plc 제품 up"
+
+  - name: plc_rotate
+    description: "PLC 회전 동작을 실행한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.rotate
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 제품 회전해"
+      - "피엘씨 회전 동작 실행해"
+      - "피엘씨 제품 돌려"
+      - "plc rotate"
+
+  - name: plc_move_down
+    description: "PLC 하강 동작을 실행한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.down
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 제품 내려"
+      - "피엘씨 제품 하강"
+      - "plc down"
+
+  - name: plc_flip
+    description: "PLC 뒤집기 동작을 실행한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.flip
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 제품 뒤집어"
+      - "피엘씨 제품 뒤집어"
+      - "피엘씨 플립 실행해"
+      - "plc flip"
+
+  - name: plc_send_out
+    description: "PLC 반출 동작을 실행한다."
+    target_scope: component
+    target_component_type: plc
+    required_capability: plc.send_out
+    is_risky: true
+    allowed_decisions: ["confirm", "reject", "execute"]
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: component_id
+        type: string
+        required: false
+        default: "plc"
+    seed_utterances:
+      - "PLC 제품 배출해"
+      - "피엘씨 제품 배출해"
+      - "피엘씨 배출 동작 실행해"
+      - "plc 제품 빼"
