@@ -88,7 +88,11 @@ def test_build_candidate_block_ignores_unknown_candidate_intent():
     block = build_candidate_block(
         [
             Candidate(intent="turn_on_aircon", score=0.7, seed_utterance="에어컨 켜"),
-            Candidate(intent="check_status", score=0.65, seed_utterance="상태 확인해"),
+            Candidate(
+                intent="check_status",
+                score=0.65,
+                seed_utterance="상태 확인",
+            ),
         ],
         load_real_schema(),
     )
@@ -105,7 +109,7 @@ def test_build_device_block_handles_empty_candidates():
 
 def test_build_device_block_includes_device_candidate_capabilities():
     schema_manager = load_real_schema()
-    devices = find_device_candidates("검사기 상태 확인해", schema_manager)
+    devices = find_device_candidates("포장 검사기 상태 확인해", schema_manager)
 
     block = build_device_block(devices)
 
@@ -118,9 +122,15 @@ def test_build_device_block_includes_device_candidate_capabilities():
 
 def test_build_device_block_includes_component_candidate_capabilities():
     schema_manager = load_real_schema()
-    devices = find_device_candidates("카메라 노출값 800으로 바꿔", schema_manager)
+    devices = find_device_candidates(
+        "포장 검사기 카메라 노출값 800으로 바꿔",
+        schema_manager,
+    )
     component_candidates_by_device = {
-        device.id: find_component_candidates("카메라 노출값 800으로 바꿔", device)
+        device.id: find_component_candidates(
+            "포장 검사기 카메라 노출값 800으로 바꿔",
+            device,
+        )
         for device in devices
     }
 

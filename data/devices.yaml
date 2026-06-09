@@ -5,9 +5,7 @@ devices:
     type: vision_inspection
     line: line_packaging
     aliases:
-      - "외관 검사기"
-      - "비전 검사기"
-      - "검사기"
+      - "포장 검사기"
     capabilities:
       - machine.start
       - machine.stop
@@ -52,6 +50,8 @@ devices:
           - "Plc"
           - "plc"
           - "피엘씨"
+          - "컨베이어"
+          - "conveyor"
         capabilities:
           - plc.status.read
           - plc.reset

@@ -78,7 +78,7 @@ def make_test_vector_store():
         metadata=[
             {
                 "intent": "check_status",
-                "seed_utterance": "검사기 상태 확인",
+                "seed_utterance": "상태 확인",
                 "is_risky": False,
                 "target_scope": "equipment",
                 "required_capability": "machine.status.read",
@@ -130,12 +130,12 @@ def test_pipeline_classify_uses_injected_dependencies_and_builds_response():
         ClassifyRequest(
             session_id="session-1",
             operator_id="operator-1",
-            utterance="검사기 상태 확인해",
+            utterance="포장 검사기 상태 확인해",
         )
     )
 
     assert calls == [
-        ("normalize", "검사기 상태 확인해"),
+        ("normalize", "포장 검사기 상태 확인해"),
         ("classify", "normalized text"),
         ("policy", "check_status"),
     ]
@@ -174,7 +174,7 @@ def test_pipeline_connects_normal_classify_flow_with_mock_external_clients():
         ClassifyRequest(
             session_id="session-1",
             operator_id="operator-1",
-            utterance="검사기 상태 확인해",
+            utterance="포장 검사기 상태 확인해",
         )
     )
 
@@ -182,9 +182,9 @@ def test_pipeline_connects_normal_classify_flow_with_mock_external_clients():
     assert response.intent == "check_status"
     assert response.slots == {"machine_id": "machine_inspection"}
     assert response.policy_reasons == ["confirm_all_enabled"]
-    assert embedder.texts == ["검사기 상태 확인해"]
+    assert embedder.texts == ["포장 검사기 상태 확인해"]
     assert "Return JSON only" in llm.system_prompt
-    assert "Utterance:\n검사기 상태 확인해" in llm.user_prompt
+    assert "Utterance:\n포장 검사기 상태 확인해" in llm.user_prompt
     assert "intent: check_status" in llm.user_prompt
     assert "device_id: machine_inspection" in llm.user_prompt
 
@@ -210,7 +210,7 @@ def test_pipeline_rejects_embedder_failure():
         ClassifyRequest(
             session_id="session-1",
             operator_id="operator-1",
-            utterance="검사기 상태 확인해",
+            utterance="포장 검사기 상태 확인해",
         )
     )
 
@@ -243,7 +243,7 @@ def test_pipeline_rejects_llm_failure():
         ClassifyRequest(
             session_id="session-1",
             operator_id="operator-1",
-            utterance="검사기 상태 확인해",
+            utterance="포장 검사기 상태 확인해",
         )
     )
 
@@ -276,10 +276,13 @@ def test_pipeline_rejects_validation_failure():
         ClassifyRequest(
             session_id="session-1",
             operator_id="operator-1",
-            utterance="검사기 상태 확인해",
+            utterance="포장 검사기 상태 확인해",
         )
     )
 
     assert response.decision == "reject"
     assert response.intent == "change_model"
-    assert response.policy_reasons == ["validation_failed: missing required slot: model_name"]
+    assert response.policy_reasons == [
+        "validation_failed: "
+        "missing required slot: machine_id; missing required slot: model_name"
+    ]

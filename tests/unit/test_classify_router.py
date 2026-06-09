@@ -65,7 +65,7 @@ def test_classify_router_calls_pipeline():
     payload = ClassifyRequest(
         session_id="session-1",
         operator_id="operator-1",
-        utterance="검사기 상태 확인해",
+        utterance="포장 검사기 상태 확인해",
     )
 
     response = classify(make_request_with_pipeline(pipeline), payload)
@@ -80,7 +80,7 @@ def test_classify_router_rejects_when_pipeline_is_not_ready():
     payload = ClassifyRequest(
         session_id="session-1",
         operator_id="operator-1",
-        utterance="검사기 상태 확인해",
+        utterance="포장 검사기 상태 확인해",
     )
 
     try:
@@ -104,7 +104,7 @@ def test_classify_router_records_timeout_metric():
     payload = ClassifyRequest(
         session_id="session-1",
         operator_id="operator-1",
-        utterance="검사기 상태 확인해",
+        utterance="포장 검사기 상태 확인해",
     )
 
     response = classify(request, payload)

@@ -15,11 +15,11 @@ def load_real_schema():
     )
 
 
-def test_validate_llm_result_accepts_valid_dict_and_applies_defaults():
+def test_validate_llm_result_accepts_valid_dict_and_applies_component_defaults():
     result = validate_llm_result(
         {
             "intent": "set_light_intensity",
-            "slots": {"value": 120},
+            "slots": {"machine_id": "machine_inspection", "value": 120},
             "confidence_score": 0.91,
         },
         load_real_schema(),
@@ -34,6 +34,21 @@ def test_validate_llm_result_accepts_valid_dict_and_applies_defaults():
         "value": 120,
     }
     assert result.errors == []
+
+
+def test_validate_llm_result_rejects_missing_machine_id():
+    result = validate_llm_result(
+        {
+            "intent": "set_light_intensity",
+            "slots": {"value": 120},
+            "confidence_score": 0.91,
+        },
+        load_real_schema(),
+    )
+
+    assert result.is_valid is False
+    assert result.slots == {"component_id": "led_light", "value": 120}
+    assert result.errors == ["missing required slot: machine_id"]
 
 
 def test_validate_llm_result_accepts_json_string():

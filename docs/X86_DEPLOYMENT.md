@@ -128,7 +128,7 @@ docker/build.sh
 intent-api:latest
 ```
 
-이미지 이름이나 태그를 바꾸려면 `.env` 또는 shell 환경 변수에서 `IMAGE_NAME`, `IMAGE_TAG`를 지정한다.
+`docker/build.sh`도 repository root의 `.env`를 자동으로 로드한다. 이미지 이름이나 태그를 바꾸려면 `.env` 또는 shell 환경 변수에서 `IMAGE_NAME`, `IMAGE_TAG`를 지정한다.
 
 ## 7. API 컨테이너 실행
 
@@ -154,8 +154,10 @@ curl http://localhost:9090/metrics
 curl -X POST http://localhost:9090/v1/classify \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer change-me" \
-  -d '{"utterance":"검사 시작해","session_id":"manual-x86-test"}'
+  -d '{"utterance":"검사 시작해","session_id":"manual-x86-test","operator_id":"operator-1"}'
 ```
+
+`API_AUTH_TOKEN`을 비워서 실행한 경우에는 `Authorization` header를 생략한다.
 
 ## 8. Runtime bootstrap
 
@@ -182,3 +184,41 @@ curl http://localhost:9091/embed \
   -H "Content-Type: application/json" \
   -d '{"inputs":["검사 시작"]}'
 ```
+
+## 10. x86 수동 검증 체크리스트
+
+아래 항목은 이 문서에서만 추적한다. `docs/PLAN_DETAILED_ACTION.md`의 16단계 이후 작업은 여기로 이관되었다.
+
+- [ ] repository 또는 필수 파일 복사 완료
+- [ ] `.env.example`을 `.env`로 복사하고 서버 값 반영
+- [ ] `docker/run_embedder.sh` 실행
+- [ ] `curl http://localhost:9091/embed ...`로 TEI 응답 확인
+- [ ] `python3 -m venv .venv` 및 `pip install -r api/requirements-x86.txt` 완료
+- [ ] `scripts/build_index.sh`로 `data/seed_index.npz` 생성
+- [ ] `docker/build.sh`로 `intent-api` 이미지 빌드
+- [ ] `docker/run.sh`로 API 컨테이너 실행
+- [ ] `curl http://localhost:9090/health` 확인
+- [ ] `curl http://localhost:9090/ready`가 `ok`인지 확인
+- [ ] `curl http://localhost:9090/metrics` 확인
+- [ ] `POST /v1/classify` 샘플 요청이 `confirm` 또는 안전한 `reject`로 응답하는지 확인
+- [ ] latency, timeout, LLM 오류, slot 오류 사례 기록
+
+## 11. 피드백 기록 기준
+
+배포 후 문제가 생기면 x86 서버에서 코드를 수정하지 않는다. 아래 기준으로 기록한 뒤, Codex 사용 가능 환경으로 돌아와 작은 단위로 수정한다.
+
+| 분류 | 기록할 내용 |
+|---|---|
+| 환경 오류 | Docker, NVIDIA runtime, port, network, file mount 문제 |
+| 설정 오류 | `.env`, LLM URL, TEI URL, token, model id 문제 |
+| 데이터 오류 | `intents.yaml`, `devices.yaml`, seed utterance, index 생성 문제 |
+| 코드 오류 | traceback, failing endpoint, 재현 payload |
+| LLM 응답 문제 | raw 응답 형태, 잘못된 intent/slot, confidence score |
+
+최소 기록:
+
+- 실행한 명령
+- 실패한 시각
+- 관련 로그: `docker logs intent-api`, `docker logs tei-embedder`
+- `/ready` 응답
+- classify 요청 payload와 응답

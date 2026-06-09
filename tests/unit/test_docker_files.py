@@ -25,6 +25,8 @@ def test_docker_build_script_uses_repo_root_context():
 
     assert script.exists()
     assert "set -euo pipefail" in content
+    assert 'ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env}"' in content
+    assert 'source "${ENV_FILE}"' in content
     assert 'IMAGE_NAME="${IMAGE_NAME:-intent-api}"' in content
     assert 'docker build \\' in content
     assert '-f "${SCRIPT_DIR}/Dockerfile"' in content

@@ -52,7 +52,7 @@ def write_test_index(path):
         metadata=[
             {
                 "intent": "check_status",
-                "seed_utterance": "검사기 상태 확인",
+                "seed_utterance": "상태 확인",
                 "is_risky": False,
                 "target_scope": "equipment",
                 "required_capability": "machine.status.read",
@@ -75,7 +75,7 @@ def test_build_runtime_components_wires_pipeline_from_settings(tmp_path):
 
     response = components.pipeline.classify(
         ClassifyRequest(
-            utterance="검사기 상태 확인해",
+            utterance="포장 검사기 상태 확인해",
             session_id="session-1",
             operator_id="operator-1",
         )
@@ -99,7 +99,12 @@ def test_build_runtime_components_rejects_invalid_policy_mode(tmp_path):
             ),
             vector_store=VectorStore.build(
                 embeddings=[[1.0, 0.0]],
-                metadata=[{"intent": "check_status", "seed_utterance": "검사기 상태"}],
+                metadata=[
+                    {
+                        "intent": "check_status",
+                        "seed_utterance": "상태 확인",
+                    }
+                ],
                 use_faiss=False,
             ),
             embedder_client=FakeEmbedder(),

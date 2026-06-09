@@ -53,7 +53,7 @@ def write_test_index(path):
         metadata=[
             {
                 "intent": "check_status",
-                "seed_utterance": "검사기 상태 확인",
+                "seed_utterance": "상태 확인",
                 "is_risky": False,
                 "target_scope": "equipment",
                 "required_capability": "machine.status.read",
@@ -86,7 +86,7 @@ def test_runtime_app_ready_and_classify_with_mock_external_clients(tmp_path):
         ClassifyRequest(
             session_id="integration-session",
             operator_id="operator-1",
-            utterance="검사기 상태 확인해",
+            utterance="포장 검사기 상태 확인해",
         ),
     )
 

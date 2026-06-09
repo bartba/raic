@@ -21,6 +21,9 @@ fi
 
 HOST_EMBEDDER_URL="${HOST_EMBEDDER_URL:-http://localhost:${TEI_HOST_PORT:-9091}}"
 HOST_VECTOR_INDEX_PATH="${HOST_VECTOR_INDEX_PATH:-${DATA_DIR}/seed_index.npz}"
+if [[ "${HOST_VECTOR_INDEX_PATH}" != /* ]]; then
+  HOST_VECTOR_INDEX_PATH="${ROOT_DIR}/${HOST_VECTOR_INDEX_PATH}"
+fi
 
 "${PYTHON_BIN}" "${SCRIPT_DIR}/build_index.py" \
   --embedder-url "${HOST_EMBEDDER_URL}" \

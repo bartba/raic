@@ -35,12 +35,17 @@ def normalize_text(text: str) -> str:
     return normalized
 
 
+def normalize_match_text(text: str) -> str:
+    return normalize_text(text).replace(" ", "")
+
+
 def find_device_candidates(text: str, schema_manager: SchemaManager) -> List[DeviceDef]:
     normalized_text = normalize_text(text)
+    match_text = normalize_match_text(text)
     candidates = []
 
     for device in schema_manager.devices:
-        if _matches_device(normalized_text, device):
+        if _matches_device(normalized_text, match_text, device):
             candidates.append(device)
 
     return candidates
@@ -52,10 +57,11 @@ def find_device_ids(text: str, schema_manager: SchemaManager) -> List[str]:
 
 def find_component_candidates(text: str, device: DeviceDef) -> List[ComponentDef]:
     normalized_text = normalize_text(text)
+    match_text = normalize_match_text(text)
     candidates = []
 
     for component in device.components:
-        if _matches_component(normalized_text, component):
+        if _matches_component(normalized_text, match_text, component):
             candidates.append(component)
 
     return candidates
@@ -65,20 +71,28 @@ def find_component_ids(text: str, device: DeviceDef) -> List[str]:
     return [component.id for component in find_component_candidates(text, device)]
 
 
-def _matches_device(normalized_text: str, device: DeviceDef) -> bool:
+def _matches_device(normalized_text: str, match_text: str, device: DeviceDef) -> bool:
     for alias in device.aliases:
-        if normalize_text(alias) in normalized_text:
-            return True
-
-    for component in device.components:
-        if _matches_component(normalized_text, component):
+        if _matches_alias(normalized_text, match_text, alias):
             return True
 
     return False
 
 
-def _matches_component(normalized_text: str, component: ComponentDef) -> bool:
+def _matches_component(
+    normalized_text: str,
+    match_text: str,
+    component: ComponentDef,
+) -> bool:
     for alias in component.aliases:
-        if normalize_text(alias) in normalized_text:
+        if _matches_alias(normalized_text, match_text, alias):
             return True
     return False
+
+
+def _matches_alias(normalized_text: str, match_text: str, alias: str) -> bool:
+    normalized_alias = normalize_text(alias)
+    return (
+        normalized_alias in normalized_text
+        or normalized_alias.replace(" ", "") in match_text
+    )

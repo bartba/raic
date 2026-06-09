@@ -125,8 +125,6 @@ def _validate_slots(
         if value is None:
             if slot_def.default is not None:
                 value = slot_def.default
-            elif slot_def.name == "machine_id" and len(schema_manager.devices) == 1:
-                value = schema_manager.devices[0].id
             elif slot_def.required:
                 errors.append("missing required slot: {0}".format(slot_def.name))
                 continue
@@ -225,6 +223,9 @@ def _validate_target(
     slots: Dict[str, Any],
     schema_manager: SchemaManager,
 ) -> List[str]:
+    if "machine_id" not in slots:
+        return []
+
     device = schema_manager.get_device(slots.get("machine_id"))
     if device is None:
         return ["unknown machine_id: {0}".format(slots.get("machine_id"))]
