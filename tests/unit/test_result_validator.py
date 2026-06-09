@@ -50,6 +50,22 @@ def test_validate_llm_result_accepts_json_string():
     assert result.is_valid is True
     assert result.slots["component_id"] == "camera"
     assert result.slots["value"] == 800
+    assert result.confidence == "medium"
+
+
+def test_validate_llm_result_accepts_custom_confidence_thresholds():
+    result = validate_llm_result(
+        {
+            "intent": "check_status",
+            "slots": {"machine_id": "machine_inspection"},
+            "confidence_score": 0.82,
+        },
+        load_real_schema(),
+        confidence_high=0.80,
+        confidence_low=0.50,
+    )
+
+    assert result.confidence == "high"
 
 
 def test_validate_llm_result_rejects_invalid_json():

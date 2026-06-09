@@ -9,10 +9,19 @@ from services.schema_manager import SchemaManager
 def validate_llm_result(
     raw_result: Any,
     schema_manager: SchemaManager,
+    confidence_high: float = 0.85,
+    confidence_low: float = 0.60,
 ) -> ValidatedResult:
     data, parse_errors = _parse_result(raw_result)
     if parse_errors:
-        return _invalid_result("unknown", {}, 0.0, parse_errors)
+        return _invalid_result(
+            "unknown",
+            {},
+            0.0,
+            parse_errors,
+            confidence_high=confidence_high,
+            confidence_low=confidence_low,
+        )
 
     intent_name = data.get("intent")
     raw_slots = data.get("slots", {})
@@ -26,6 +35,8 @@ def validate_llm_result(
             {},
             confidence_score,
             ["missing intent"] + confidence_errors,
+            confidence_high=confidence_high,
+            confidence_low=confidence_low,
         )
 
     intent = schema_manager.get_intent(intent_name)
@@ -35,6 +46,8 @@ def validate_llm_result(
             {},
             confidence_score,
             ["unknown intent: {0}".format(intent_name)] + confidence_errors,
+            confidence_high=confidence_high,
+            confidence_low=confidence_low,
         )
 
     if not isinstance(raw_slots, dict):
@@ -44,6 +57,8 @@ def validate_llm_result(
             confidence_score,
             ["slots must be an object"] + confidence_errors,
             intent.is_risky,
+            confidence_high=confidence_high,
+            confidence_low=confidence_low,
         )
 
     slots, slot_errors = _validate_slots(raw_slots, intent, schema_manager)
@@ -52,7 +67,11 @@ def validate_llm_result(
     return ValidatedResult(
         intent=intent.name,
         slots=slots,
-        confidence=_confidence_from_score(confidence_score),
+        confidence=_confidence_from_score(
+            confidence_score,
+            confidence_high,
+            confidence_low,
+        ),
         confidence_score=confidence_score,
         is_risky=intent.is_risky,
         is_valid=not errors,
@@ -252,10 +271,14 @@ def _find_component(device: DeviceDef, component_id: Any) -> Optional[ComponentD
     return None
 
 
-def _confidence_from_score(score: float) -> Confidence:
-    if score >= 0.8:
+def _confidence_from_score(
+    score: float,
+    confidence_high: float,
+    confidence_low: float,
+) -> Confidence:
+    if score >= confidence_high:
         return "high"
-    if score >= 0.5:
+    if score >= confidence_low:
         return "medium"
     return "low"
 
@@ -266,11 +289,17 @@ def _invalid_result(
     confidence_score: float,
     errors: List[str],
     is_risky: bool = False,
+    confidence_high: float = 0.85,
+    confidence_low: float = 0.60,
 ) -> ValidatedResult:
     return ValidatedResult(
         intent=intent,
         slots=slots,
-        confidence=_confidence_from_score(confidence_score),
+        confidence=_confidence_from_score(
+            confidence_score,
+            confidence_high,
+            confidence_low,
+        ),
         confidence_score=confidence_score,
         is_risky=is_risky,
         is_valid=False,

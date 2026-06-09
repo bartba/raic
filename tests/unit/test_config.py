@@ -13,6 +13,10 @@ def test_settings_load_required_env(monkeypatch):
     assert settings.api_auth_token == "secret-token"
     assert settings.policy_mode == "confirm_all"
     assert settings.faiss_top_k == 10
+    assert settings.llm_api_key is None
+    assert settings.embedder_timeout_ms == 800
+    assert settings.vector_index_path == "/app/data/seed_index.npz"
+    assert settings.vector_index_use_faiss is True
 
 
 def test_settings_allow_missing_api_auth_token(monkeypatch):

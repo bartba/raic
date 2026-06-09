@@ -16,13 +16,14 @@
 
 - [PRD](docs/PRD.md): 제품 요구사항과 안전 정책
 - [구현 계획](docs/PLAN_CODING.md): MVP 구조, 모듈 책임, 작업 목록
+- [x86 배포 절차](docs/X86_DEPLOYMENT.md): x86 GPU 서버 Docker/TEI/API 수동 실행 절차
 - [작업 원칙](AGENTS.md): 단순성, 가독성, 최소 변경 원칙
 
 HTML 문서는 `docs/html/` 아래에 있습니다.
 
 ## 현재 상태
 
-현재 저장소는 기획 및 구현 계획 문서 단계입니다. 실제 API, Docker 구성, 테스트 코드는 아직 생성되지 않았습니다.
+현재 저장소는 MVP 구현 진행 단계입니다. 핵심 API, Docker 구성, unit/mock 테스트가 단계별로 추가되고 있으며, 실제 Docker/TEI/LLM 연동 검증은 x86 GPU 서버에서 수행합니다.
 
 ## MVP 구성
 
@@ -41,4 +42,3 @@ STT 텍스트
 - `execute`: Phase 2 이후 검증된 non-risky high confidence 명령만 허용
 - `confirm`: Phase 1 모든 제어 명령, risky 명령, medium confidence
 - `reject`: OOD, low confidence, 스키마 실패, 필수 slot 누락
-

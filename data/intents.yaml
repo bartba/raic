@@ -16,6 +16,9 @@ intents:
       - "설비 가동해"
       - "장비 스타트"
       - "장비 start"
+      - "검사기 가동 시작해"
+      - "비전 검사기 켜줘"
+      - "machine start 해줘"
 
   - name: stop_machine
     description: "장비를 정지한다."
@@ -32,6 +35,9 @@ intents:
       - "설비 정지"
       - "장비 스탑"
       - "장비 stop"
+      - "검사기 멈춰줘"
+      - "비전 검사기 정지해"
+      - "machine stop 해줘"
 
   - name: emergency_stop
     description: "장비를 비상 정지한다."
@@ -48,6 +54,9 @@ intents:
       - "비상정지해"
       - "설비 긴급 정지"
       - "emergency stop"
+      - "검사기 비상정지"
+      - "긴급 정지해"
+      - "emergency 정지"
 
   - name: check_status
     description: "장비 상태를 조회한다."
@@ -64,6 +73,9 @@ intents:
       - "설비 상태 확인해"
       - "장비 상태 보여줘"
       - "상태 확인해"
+      - "검사기 상태 확인"
+      - "비전 검사기 현재 상태 알려줘"
+      - "machine status 확인해"
 
   - name: change_model
     description: "비전 검사 모델을 변경한다."
@@ -83,6 +95,9 @@ intents:
       - "설비 모델 B로 변경해"
       - "모델 변경해"
       - "모델 A로 전환해"
+      - "검사 모델 A로 변경"
+      - "비전 모델 B로 바꿔"
+      - "모델 C 적용해"
 
   - name: set_light_intensity
     description: "조명 밝기를 설정한다."
@@ -108,6 +123,9 @@ intents:
       - "조명 밝기 250으로 올려"
       - "조명 150으로 맞춰"
       - "led 조명 밝기 조정해"
+      - "조명 밝기 100으로 설정해"
+      - "라이트 세기 200으로 바꿔"
+      - "LED intensity 180으로 맞춰"
 
   - name: set_camera_exposure
     description: "카메라 exposure 값을 설정한다."
@@ -133,6 +151,9 @@ intents:
       - "카메라 노출값 800으로 바꿔"
       - "camera exposure 1200으로 설정해"
       - "노출 1000으로 맞춰"
+      - "카메라 exposure 값을 500으로 바꿔"
+      - "비전 카메라 노출 2000으로 설정해"
+      - "camera 노출 1500으로 맞춰"
 
   - name: set_camera_gain
     description: "카메라 gain 값을 설정한다."
@@ -158,6 +179,9 @@ intents:
       - "카메라 게인 10으로 설정해"
       - "camera gain 5로 바꿔"
       - "게인값 조정해"
+      - "카메라 gain 12로 설정해"
+      - "비전 카메라 게인 8로 변경해"
+      - "gain 값 20으로 맞춰"
 
   - name: set_robot_speed
     description: "로봇 속도를 설정한다."
@@ -188,6 +212,9 @@ intents:
       - "로봇 속도 60으로 올려"
       - "robot 속도 30퍼센트로 설정해"
       - "로보트 속도 조정해"
+      - "로봇 속도 40 percent로 맞춰"
+      - "로보트 스피드 70으로 변경해"
+      - "robot speed 25 percent로 설정해"
 
   - name: check_plc_status
     description: "PLC 상태를 조회한다."
@@ -208,6 +235,9 @@ intents:
       - "PLC 상태 알려줘"
       - "피엘씨 상태 확인해"
       - "plc 상태 보여줘"
+      - "PLC 현재 상태 확인해"
+      - "피엘씨 동작 상태 알려줘"
+      - "plc status 확인"
 
   - name: plc_reset
     description: "PLC를 리셋한다."
@@ -228,6 +258,13 @@ intents:
       - "PLC 리셋해"
       - "피엘씨 reset"
       - "plc 초기화해"
+      - "컨베이어 리셋해"
+      - "컨베이어 초기화해"
+      - "conveyor reset"
+      - "conveyor 초기화해"
+      - "피엘씨 리셋 실행해"
+      - "plc reset 해줘"
+      - "컨베이어 리셋 동작 실행해"
 
   - name: plc_bring_in
     description: "PLC 투입 동작을 실행한다."
@@ -247,6 +284,11 @@ intents:
     seed_utterances:
       - "PLC 제품 투입해"
       - "피엘씨 제품 투입 동작 실행해"
+      - "컨베이어 제품 투입해"
+      - "conveyor 제품 투입해"
+      - "제품 인입해"
+      - "PLC 인입 동작 실행해"
+      - "컨베이어 투입 동작 시작해"
 
   - name: plc_align
     description: "PLC 정렬 동작을 실행한다."
@@ -269,6 +311,11 @@ intents:
       - "plc align"
       - "plc 제품 얼라인해"
       - "피엘씨 얼라인"
+      - "컨베이어 정렬해"
+      - "conveyor 정렬해"  
+      - "제품 위치 정렬해"
+      - "PLC 얼라인 동작해"
+      - "컨베이어 얼라인 실행해"
 
   - name: plc_move_up
     description: "PLC 상승 동작을 실행한다."
@@ -291,6 +338,11 @@ intents:
       - "피엘씨 제품 업"
       - "피엘씨 제품 상승"
       - "plc 제품 up"
+      - "컨베이어 올려"
+      - "conveyor 올려"
+      - "PLC 상승시켜"
+      - "제품 위로 올려"
+      - "컨베이어 상승 동작해"
 
   - name: plc_rotate
     description: "PLC 회전 동작을 실행한다."
@@ -312,6 +364,11 @@ intents:
       - "피엘씨 회전 동작 실행해"
       - "피엘씨 제품 돌려"
       - "plc rotate"
+      - "컨베이어 회전해"
+      - "conveyor 회전해"
+      - "제품 회전시켜"
+      - "PLC 제품 돌림 동작해"
+      - "컨베이어 로테이트 실행해"
 
   - name: plc_move_down
     description: "PLC 하강 동작을 실행한다."
@@ -332,6 +389,11 @@ intents:
       - "PLC 제품 내려"
       - "피엘씨 제품 하강"
       - "plc down"
+      - "컨베이어 내려"
+      - "conveyor 내려"
+      - "PLC 하강시켜"
+      - "제품 아래로 내려"
+      - "컨베이어 하강 동작해"
 
   - name: plc_flip
     description: "PLC 뒤집기 동작을 실행한다."
@@ -352,7 +414,13 @@ intents:
       - "PLC 제품 뒤집어"
       - "피엘씨 제품 뒤집어"
       - "피엘씨 플립 실행해"
-      - "plc flip"
+      - "plc flip"  
+      - "제품 반전해"
+      - "제품 뒤집어"
+      - "제품 반전 동작 실행해"
+      - "반전기 동작해"
+      - "PLC 반전 동작 실행해"
+      - "제품 플립해"
 
   - name: plc_send_out
     description: "PLC 반출 동작을 실행한다."
@@ -374,3 +442,8 @@ intents:
       - "피엘씨 제품 배출해"
       - "피엘씨 배출 동작 실행해"
       - "plc 제품 빼"
+      - "컨베이어 제품 배출해"
+      - "conveyor 제품 배출해"
+      - "PLC 제품 반출해"
+      - "제품 밖으로 빼"
+      - "컨베이어 반출 동작 실행해"

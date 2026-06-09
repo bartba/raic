@@ -10,7 +10,10 @@ def decide_policy(
     confirm_all: bool = True,
 ) -> PolicyDecision:
     if intent is None or result.intent == "unknown":
-        return PolicyDecision(decision="reject", reasons=["unknown_intent"])
+        return PolicyDecision(
+            decision="reject",
+            reasons=_with_result_errors(["unknown_intent"], result),
+        )
 
     if result.intent != intent.name:
         return PolicyDecision(
@@ -49,6 +52,15 @@ def decide_policy(
         )
 
     return _allowed_decision("execute", intent, ["execution_allowed"])
+
+
+def _with_result_errors(
+    reasons: List[str],
+    result: ValidatedResult,
+) -> List[str]:
+    if not result.errors:
+        return reasons
+    return reasons + ["validation_failed: {0}".format("; ".join(result.errors))]
 
 
 def _allowed_decision(

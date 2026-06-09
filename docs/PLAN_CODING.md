@@ -90,7 +90,7 @@ command-interpreter/
 | `embedder_client.py` | TEI 임베더 호출 |
 | `vector_store.py` | FAISS 인덱스 생성과 검색 |
 | `prompt_builder.py` | 후보 intent 기반 LLM prompt 구성 |
-| `llm_client.py` | 외부 LLM 호출과 timeout 처리 |
+| `llm_client.py` | LangChain 기반 외부 LLM 호출과 timeout 처리 |
 | `schema_manager.py` | `load_schema()` 진입점으로 intent/device YAML 로드와 검증 |
 | `result_validator.py` | LLM 결과, slot, 값 범위 검증 |
 | `policy_engine.py` | `execute` / `confirm` / `reject` 결정 |
@@ -142,7 +142,8 @@ def decide(validation, mode):
 | 변수명 | 설명 |
 |---|---|
 | `LLM_API_URL` | 외부 LLM 서버 base URL |
-| `API_AUTH_TOKEN` | 외부 LLM 사용 시 API 인증 토큰, 로컬 LLM은 선택 사항 |
+| `LLM_API_KEY` | 외부 LLM 사용 시 API 인증 키, 로컬 LLM은 선택 사항 |
+| `API_AUTH_TOKEN` | RAIC API 호출을 보호하는 bearer token, 내부 테스트에서는 선택 사항 |
 
 주요 기본값:
 
@@ -152,13 +153,18 @@ def decide(validation, mode):
 | `LLM_TIMEOUT_MS` | `800` |
 | `LLM_MAX_RETRIES` | `0` |
 | `EMBEDDER_URL` | `http://embedder:80` |
+| `EMBEDDER_TIMEOUT_MS` | `800` |
 | `FAISS_TOP_K` | `10` |
 | `CONFIDENCE_HIGH` | `0.85` |
 | `CONFIDENCE_LOW` | `0.60` |
 | `POLICY_MODE` | `confirm_all` |
 | `INTENT_SCHEMA_PATH` | `/app/data/intents.yaml` |
 | `DEVICE_SCHEMA_PATH` | `/app/data/devices.yaml` |
+| `VECTOR_INDEX_PATH` | `/app/data/seed_index.npz` |
+| `VECTOR_INDEX_USE_FAISS` | `true` |
 | `RAW_UTTERANCE_LOGGING` | `false` |
+
+LLM 호출은 `langchain-openai`의 `ChatOpenAI`를 기본 adapter로 사용한다. Qwen3.5 계열은 OpenAI-compatible Chat Completions API를 우선 전제로 하며, `LLM_API_URL`은 `/v1`까지 포함한 base URL로 설정한다. 이후 provider 변경이 필요하면 pipeline은 `llm_client.py`의 chat model 주입 지점을 통해 확장한다.
 
 ---
 
@@ -303,6 +309,7 @@ x86 GPU 서버에서 수행:
 - 실제 TEI 임베딩 호출
 - FAISS 인덱스 생성과 검색
 - 외부 LLM 연동
+- LangChain `ChatOpenAI`를 통한 Qwen3.5 OpenAI-compatible endpoint 연동
 - `/v1/classify`, `/ready`, `/metrics` 확인
 - E2E 시나리오와 latency 측정
 

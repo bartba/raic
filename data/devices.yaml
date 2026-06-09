@@ -5,12 +5,8 @@ devices:
     type: vision_inspection
     line: line_packaging
     aliases:
-      - "혼류 포장 외관 비전 검사기"
-      - "포장 외관 비전 검사기"
-      - "포장 비전 검사기"
-      - "외관 비전 검사기"
-      - "비전 검사기"
       - "외관 검사기"
+      - "비전 검사기"
       - "검사기"
     capabilities:
       - machine.start

@@ -37,14 +37,14 @@ Jetson에서 통과한 테스트는 코드 로직 검증으로만 본다. 실사
 - [x] 5. 정규화 모듈
 - [x] 6. 정책 엔진
 - [x] 7. LLM 결과 검증
-- [ ] 8. Prompt 빌더
-- [ ] 9. 외부 클라이언트
-- [ ] 10. FAISS VectorStore
-- [ ] 11. 파이프라인 조립
-- [ ] 12. FastAPI 라우터
-- [ ] 13. 인증, 로깅, 메트릭
-- [ ] 14. Docker와 실행 스크립트
-- [ ] 15. Jetson 통합 점검
+- [x] 8. Prompt 빌더
+- [x] 9. 외부 클라이언트
+- [x] 10. FAISS VectorStore
+- [x] 11. 파이프라인 조립
+- [x] 12. FastAPI 라우터
+- [x] 13. 인증, 로깅, 메트릭
+- [x] 14. Docker와 실행 스크립트
+- [x] 15. Jetson 통합 점검
 - [ ] 16. x86 GPU 서버 수동 테스트
 - [ ] 17. 피드백 반영
 
@@ -305,217 +305,241 @@ Jetson에서 통과한 테스트는 코드 로직 검증으로만 본다. 실사
 
 ### 8. Prompt 빌더
 
-- [ ] 8.1 시스템 프롬프트 작성
+- [x] 8.1 시스템 프롬프트 작성
   - 생성: `api/services/prompt_builder.py`
   - 내용: JSON only, 후보 intent만 선택, decision 금지
   - Jetson 테스트: 문자열 포함 여부 테스트
   - 설명: LLM 역할을 좁게 제한한다.
+  - 완료: `build_system_prompt()`가 JSON only, 후보 intent 제한, `intent/slots/confidence_score`만 반환, decision 금지를 명시하도록 작성했고 문자열 계약 테스트를 추가했다.
 
-- [ ] 8.2 후보 block 작성
+- [x] 8.2 후보 block 작성
   - 수정: `prompt_builder.py`
   - 내용: intent 이름, 설명, slot schema, seed utterance 포함
   - Jetson 테스트: 후보 0개/1개/여러 개 테스트
   - 설명: 사람이 읽어도 prompt 구조를 이해할 수 있어야 한다.
+  - 완료: `build_candidate_block()`이 후보 intent의 이름, 설명, target scope, capability, slot schema, seed utterance를 구조화해 출력하고, 후보 없음/단일/복수/unknown 후보 제외 케이스를 테스트했다.
 
-- [ ] 8.3 device 후보 포함
+- [x] 8.3 device 후보 포함
   - 수정: `prompt_builder.py`
   - 내용: normalizer가 찾은 equipment/component 후보와 capability 정보 전달
   - Jetson 테스트: device/component candidate 포함 여부 확인
   - 설명: 장비 ID와 component ID 추정을 안정화한다.
+  - 완료: `build_device_block()`이 normalizer가 찾은 device/component 후보의 id, type, alias, capability 정보를 구조화해 출력하고, 빈 후보/equipment 후보/component 후보 케이스를 테스트했다.
 
 완료 기준:
 
-- [ ] LLM prompt가 짧고 구조적이다.
-- [ ] decision 판단을 LLM에 요구하지 않는다.
+- [x] LLM prompt가 짧고 구조적이다.
+- [x] decision 판단을 LLM에 요구하지 않는다.
 
 ---
 
 ### 9. 외부 클라이언트
 
-- [ ] 9.1 embedder client 작성
+- [x] 9.1 embedder client 작성
   - 생성: `api/services/embedder_client.py`
   - 내용: TEI `/embed` 호출 wrapper
   - Jetson 테스트: httpx mock 테스트
   - 설명: 실제 TEI는 x86 GPU 서버에서 검증한다.
+  - 완료: `EmbedderClient`가 TEI `/embed`에 `inputs` payload를 POST하고 embedding 응답을 float list로 검증한다. HTTP 오류, 잘못된 JSON shape, 단일 embedding 개수 오류를 명확한 `EmbedderClientError`로 처리하도록 mock 테스트했다.
 
-- [ ] 9.2 LLM client 작성
+- [x] 9.2 LLM client 작성
   - 생성: `api/services/llm_client.py`
-  - 내용: OpenAI-compatible `/chat/completions` 호출
-  - Jetson 테스트: httpx mock 테스트
-  - 설명: timeout과 JSON 파싱 실패를 명확히 처리한다.
+  - 내용: LangChain `ChatOpenAI` 기반 OpenAI-compatible `/chat/completions` 호출
+  - Jetson 테스트: fake chat model 주입 테스트
+  - 설명: Qwen3.5 계열 OpenAI-compatible 서버를 우선 염두에 두되, LangChain chat model 주입 구조로 향후 provider 확장을 가능하게 한다.
+  - 완료: `LLMClient`가 LangChain chat model에 system/human prompt를 전달하고 텍스트 content를 반환한다. 실제 LangChain import는 기본 chat model 생성 시점으로 지연하고, 단위 테스트는 fake chat model로 message 전달, text block 추출, 오류 래핑을 검증했다.
 
-- [ ] 9.3 timeout 처리 작성
+- [x] 9.3 timeout 처리 작성
   - 수정: `llm_client.py`, `embedder_client.py`
   - 내용: timeout 시 명확한 예외 또는 reject 가능한 결과로 변환
   - Jetson 테스트: timeout mock 테스트
   - 설명: 외부 장애가 서버 전체 장애로 번지지 않게 한다.
+  - 완료: `EmbedderClient`는 `httpx.TimeoutException`을 `embedder request timed out`으로, 기타 `httpx.RequestError`를 명확한 요청 실패로 변환한다. `LLMClient`는 `TimeoutError`를 `llm request timed out`으로 분리하고, 그 외 LangChain chat model 오류는 `llm request failed: ...`로 감싼다.
 
 완료 기준:
 
-- [ ] 외부 호출은 모두 mock으로 테스트 가능하다.
-- [ ] 네트워크 오류 메시지가 명확하다.
+- [x] 외부 호출은 모두 mock으로 테스트 가능하다.
+- [x] 네트워크 오류 메시지가 명확하다.
 
 ---
 
 ### 10. FAISS VectorStore
 
-- [ ] 10.1 VectorStore 기본 작성
+- [x] 10.1 VectorStore 기본 작성
   - 생성: `api/services/vector_store.py`
   - 내용: embedding 배열과 metadata로 index build/search
   - Jetson 테스트: 작은 numpy 배열로 검색 테스트
   - 설명: FAISS 사용 코드를 작게 격리한다.
+  - 완료: `VectorStore.build()`와 `search()`를 추가했다. x86에서 `faiss-cpu`가 있으면 `IndexFlatIP`를 사용하고, Jetson/unit test에서는 numpy fallback으로 동일한 cosine 검색 계약을 검증한다.
 
-- [ ] 10.2 seed metadata 구성
+- [x] 10.2 seed metadata 구성
   - 수정: `schema_manager.py` 또는 `vector_store.py`
   - 내용: seed utterance와 intent metadata 연결
   - Jetson 테스트: metadata 매핑 테스트
   - 설명: 검색 결과가 어떤 intent에서 왔는지 명확해야 한다.
+  - 완료: `SchemaManager.list_seed_records()`가 seed utterance별 intent, risk, target scope, capability, component type metadata를 반환하고, `VectorStore` 검색 결과가 해당 metadata를 보존하는지 테스트했다.
 
-- [ ] 10.3 인덱스 빌드 스크립트 작성
+- [x] 10.3 인덱스 빌드 스크립트 작성
   - 생성: `scripts/build_index.py`
   - 내용: seed utterance 로드, embedder 호출, index 저장
   - Jetson 테스트: embedder mock 모드 또는 dry-run
   - x86 테스트: 실제 TEI로 인덱스 생성
   - 설명: 실제 embedding 생성은 x86 GPU 서버에서 확인한다.
+  - 완료: `scripts/build_index.py`가 schema seed records를 로드하고, 실제 `EmbedderClient` 또는 `--mock-embeddings`로 embedding을 생성해 `VectorStore`를 `.npz`로 저장한다. Jetson에서는 mock embedding과 `--no-faiss`로 저장/로드 경로를 검증했다.
 
 완료 기준:
 
-- [ ] unit test에서 검색 결과 순서와 metadata가 맞다.
-- [ ] 실제 인덱스 생성은 x86 GPU 서버 검증 대상으로 남긴다.
+- [x] unit test에서 검색 결과 순서와 metadata가 맞다.
+- [x] 실제 인덱스 생성은 x86 GPU 서버 검증 대상으로 남긴다.
 
 ---
 
 ### 11. 파이프라인 조립
 
-- [ ] 11.1 `pipeline.py` skeleton 작성
+- [x] 11.1 `pipeline.py` skeleton 작성
   - 생성: `api/services/pipeline.py`
   - 내용: 의존성 주입 가능한 `classify` 함수 구조
   - Jetson 테스트: 모든 의존성 mock으로 정상 흐름 테스트
   - 설명: 실제 외부 호출 없이 흐름을 검증한다.
+  - 완료: `ClassificationPipeline`과 `PipelineDependencies`를 추가해 normalize/classify/policy 단계를 주입받도록 만들고, mock dependency로 `ClassifyResponse` 조립을 테스트했다.
 
-- [ ] 11.2 정상 classify 흐름 연결
+- [x] 11.2 정상 classify 흐름 연결
   - 수정: `pipeline.py`
   - 내용: normalize -> embed -> search -> prompt -> llm -> validate -> policy
   - Jetson 테스트: 정상 응답 테스트
   - 설명: 한 번에 실제 서비스 연결을 하지 않는다.
+  - 완료: `build_classify_normalized()`가 embedder, vector store, prompt builder, LLM client, result validator를 연결하고, `ClassificationPipeline`에서 policy까지 이어지는 정상 `confirm` 응답을 mock 외부 의존성으로 테스트했다.
 
-- [ ] 11.3 실패 흐름 연결
+- [x] 11.3 실패 흐름 연결
   - 수정: `pipeline.py`
   - 내용: embedder 실패, LLM timeout, validation 실패
   - Jetson 테스트: 실패 케이스별 테스트
   - 설명: 실패가 `reject` 또는 명확한 오류로 귀결되어야 한다.
+  - 완료: embedder/vector search 오류와 LLM 오류는 invalid `ValidatedResult`로 변환해 reject 경로를 타게 했고, validation 실패는 정책 엔진의 `validation_failed` reject로 귀결되도록 테스트했다.
 
 완료 기준:
 
-- [ ] mock 기반 pipeline test가 통과한다.
-- [ ] 기본 제어 명령은 `confirm`으로 반환된다.
+- [x] mock 기반 pipeline test가 통과한다.
+- [x] 기본 제어 명령은 `confirm`으로 반환된다.
 
 ---
 
 ### 12. FastAPI 라우터
 
-- [ ] 12.1 health 라우터 작성
+- [x] 12.1 health 라우터 작성
   - 생성: `api/routers/health.py`
   - 엔드포인트: `/health`, `/ready`, `/metrics`
   - Jetson 테스트: TestClient 테스트
   - 설명: `/ready`는 schema/index/외부 설정 상태를 반영한다.
+  - 완료: 기존 `/health`에 `/ready`, `/metrics`를 추가했다. `/ready`는 `app.state`의 schema/index/settings 상태를 반영하고, `/metrics`는 Prometheus payload를 반환한다. Jetson 환경에서 TestClient가 멈춰 라우터 함수 단위 테스트로 응답 계약을 검증했다.
 
-- [ ] 12.2 classify 라우터 작성
+- [x] 12.2 classify 라우터 작성
   - 생성: `api/routers/classify.py`
   - 엔드포인트: `POST /v1/classify`
   - Jetson 테스트: TestClient + mock pipeline
   - 설명: API 계층은 얇게 유지한다.
+  - 완료: `POST /v1/classify` 라우터를 추가해 `app.state.pipeline.classify()`만 호출하도록 만들고, pipeline 미준비 시 503을 반환하도록 함수 단위 테스트했다.
 
-- [ ] 12.3 main 앱 연결
+- [x] 12.3 main 앱 연결
   - 수정: `api/main.py`
   - 내용: 라우터 등록, middleware 등록 위치 확보
   - Jetson 테스트: 앱 import와 route 존재 확인
   - 설명: 앱 생성 로직이 복잡해지지 않게 한다.
+  - 완료: `create_app()`이 health/classify 라우터를 등록하고, settings/schema/vector_store/pipeline state를 선택적으로 주입받도록 만들었다. 앱 import, route 존재, runtime state 주입을 테스트했다.
 
 완료 기준:
 
-- [ ] `POST /v1/classify`가 mock pipeline으로 응답한다.
-- [ ] `/health`가 200을 반환한다.
+- [x] `POST /v1/classify`가 mock pipeline으로 응답한다.
+- [x] `/health`가 200을 반환한다.
 
 ---
 
 ### 13. 인증, 로깅, 메트릭
 
-- [ ] 13.1 API token 인증 작성
+- [x] 13.1 API token 인증 작성
   - 생성: `api/middleware/auth_mw.py`
   - 내용: `Authorization: Bearer <token>` 확인
   - Jetson 테스트: 토큰 없음/오류/정상 테스트
   - 설명: 내부망이라도 API 인증은 필수다.
+  - 완료: `auth_middleware`와 `configure_auth()`를 추가했다. token이 설정된 경우 protected path는 `Authorization: Bearer <token>`을 요구하고, `/health`, `/ready`, `/metrics`는 public path로 유지한다. 토큰 없음/오류/정상과 `create_app()` 연결을 테스트했다.
 
-- [ ] 13.2 구조화 로깅 작성
+- [x] 13.2 구조화 로깅 작성
   - 생성: `api/middleware/logging_mw.py`
   - 내용: request id, decision, intent, latency, error
   - Jetson 테스트: 로그 필드 테스트
   - 설명: 원문 발화는 기본 저장하지 않는다.
+  - 완료: `logging_middleware`와 `configure_logging()`을 추가했다. request id, method, path, status code, latency, error class를 구조화 필드로 남기고, 원문 발화/body는 기록하지 않는다. 응답에는 `x-request-id`를 설정한다.
 
-- [ ] 13.3 Prometheus 메트릭 작성
+- [x] 13.3 Prometheus 메트릭 작성
   - 생성: `api/middleware/metrics_mw.py`
   - 내용: request count, latency, decision count, timeout count
   - Jetson 테스트: `/metrics` 응답 포함 여부
   - 설명: 운영 관측에 필요한 최소 메트릭만 둔다.
+  - 완료: `metrics_middleware`와 `configure_metrics()`를 추가했다. HTTP request count/latency, classify decision count, external timeout count를 앱별 Prometheus registry에 기록하고 `/metrics`에서 해당 registry를 반환하도록 연결했다.
 
 완료 기준:
 
-- [ ] 인증 없는 요청은 거부된다.
-- [ ] 로그에 원문 발화가 기본 저장되지 않는다.
-- [ ] `/metrics`가 Prometheus 형식으로 응답한다.
+- [x] 인증 없는 요청은 거부된다.
+- [x] 로그에 원문 발화가 기본 저장되지 않는다.
+- [x] `/metrics`가 Prometheus 형식으로 응답한다.
 
 ---
 
 ### 14. Docker와 실행 스크립트
 
-- [ ] 14.1 Dockerfile 작성
+- [x] 14.1 Dockerfile 작성
   - 생성: `docker/Dockerfile`
   - 내용: FastAPI 앱 실행 이미지
   - Jetson 테스트: 문법 검토
   - x86 테스트: 실제 docker build
   - 설명: Docker 완료 기준은 x86 GPU 서버다.
+  - 완료: repo root build context 기준 Dockerfile을 작성했다. `requirements-x86.txt`를 설치하고 `api/`, `data/`, `scripts/`를 복사한 뒤 `uvicorn main:app`으로 실행한다. Jetson에서는 파일 내용 검증 테스트만 수행했고, 실제 docker build는 x86 GPU 서버 검증으로 남긴다.
 
-- [ ] 14.2 build/run 스크립트 작성
+- [x] 14.2 build/run 스크립트 작성
   - 생성: `docker/build.sh`, `docker/run.sh`
-  - 내용: intent-api와 embedder 실행
+  - 내용: intent-api 이미지 빌드와 API 컨테이너 실행
   - Jetson 테스트: shellcheck 가능 시 확인, 아니면 내용 검토
   - x86 테스트: 실제 실행
   - 설명: Reranker는 포함하지 않는다.
+  - 완료: `docker/build.sh`, `docker/run.sh`, `docker/run_embedder.sh`, `scripts/build_index.sh`, `.env.example`을 추가했다. build script는 repo root context로 `intent-api:latest` 이미지를 만들고, run script는 repo root의 `.env`를 자동 로드한 뒤 9090 포트 기준으로 API 컨테이너를 실행한다. TEI embedder는 별도 컨테이너로 실행하고 기본 포트는 9091로 둔다. Host index 생성은 `HOST_EMBEDDER_URL`, API 컨테이너 호출은 `EMBEDDER_URL`로 분리했다.
 
-- [ ] 14.3 x86 서버 실행 절차 문서화
+- [x] 14.3 x86 서버 실행 절차 문서화
   - 수정: README 또는 별도 운영 메모
   - 내용: 수동 복사, docker build, index build, run
   - Jetson 테스트: 문서 검토
   - 설명: 원시적 수동 배포 과정을 숨기지 않는다.
+  - 완료: `docs/X86_DEPLOYMENT.md`를 추가하고 README에 링크했다. 문서에는 소스 복사, `.env` 작성, TEI 별도 컨테이너 실행, seed index 생성, API image build/run, health/ready/metrics/classify 확인 명령을 정리했다. `main.py`의 runtime bootstrap이 schema, index, embedder, LLM client, pipeline을 자동 조립하는 기준도 명시했다.
 
 완료 기준:
 
-- [ ] x86 GPU 서버에서 Docker build/run 시도 준비가 된다.
+- [x] x86 GPU 서버에서 Docker build/run 시도 준비가 된다.
 
 ---
 
 ### 15. Jetson 통합 점검
 
-- [ ] 15.1 전체 unit test 실행
+- [x] 15.1 전체 unit test 실행
   - 대상: `tests/unit/`
   - Jetson 테스트: 전체 unit test
   - 설명: 실제 외부 서비스 없이 모든 핵심 로직을 검증한다.
+  - 완료: `PYTHONPATH=api:. .venv/bin/pytest tests/unit`로 120개 unit test 통과를 확인했다.
 
-- [ ] 15.2 mock integration test 실행
+- [x] 15.2 mock integration test 실행
   - 대상: `tests/integration/test_classify_api.py`
   - Jetson 테스트: TestClient + mock pipeline 또는 mock clients
   - 설명: API 입출력 형태를 확인한다.
+  - 완료: TestClient 대신 router 함수 직접 호출 방식의 mock integration test를 추가했다. Runtime bootstrap, `/ready`, `/v1/classify` 응답 계약을 fake embedder/LLM과 임시 vector index로 검증한다.
 
-- [ ] 15.3 변경 파일 목록 정리
+- [x] 15.3 변경 파일 목록 정리
   - 대상: 신규/수정 파일 목록
   - Jetson 테스트: `rg --files`로 확인
   - 설명: x86 서버로 수동 복사할 파일을 명확히 한다.
+  - 완료: `docs/X86_DEPLOYMENT.md`에 필수/권장/제외 배포 파일 목록을 정리했다.
 
 완료 기준:
 
-- [ ] Jetson에서 가능한 테스트가 통과한다.
-- [ ] x86 서버로 전달할 파일 목록이 정리된다.
+- [x] Jetson에서 가능한 테스트가 통과한다.
+- [x] x86 서버로 전달할 파일 목록이 정리된다.
 
 ---
 

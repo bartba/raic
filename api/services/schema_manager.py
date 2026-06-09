@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Iterable, List, Optional, Set, Type
+from typing import Any, Dict, Iterable, List, Optional, Set, Type
 
 import yaml
 from pydantic import BaseModel
@@ -37,6 +37,22 @@ class SchemaManager:
         for intent in self.intents:
             examples.extend(intent.seed_utterances)
         return examples
+
+    def list_seed_records(self) -> List[Dict[str, Any]]:
+        records = []
+        for intent in self.intents:
+            for seed_utterance in intent.seed_utterances:
+                records.append(
+                    {
+                        "intent": intent.name,
+                        "seed_utterance": seed_utterance,
+                        "is_risky": intent.is_risky,
+                        "target_scope": intent.target_scope,
+                        "required_capability": intent.required_capability,
+                        "target_component_type": intent.target_component_type,
+                    }
+                )
+        return records
 
 
 def load_schema(intent_path: str, device_path: str) -> SchemaManager:

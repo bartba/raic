@@ -98,6 +98,19 @@ def test_unknown_intent_is_rejected():
     assert decision.reasons == ["unknown_intent"]
 
 
+def test_unknown_intent_preserves_validation_errors():
+    decision = decide_policy(
+        make_result(intent="unknown", errors=["llm request timed out"]),
+        None,
+    )
+
+    assert decision.decision == "reject"
+    assert decision.reasons == [
+        "unknown_intent",
+        "validation_failed: llm request timed out",
+    ]
+
+
 def test_intent_mismatch_is_rejected():
     decision = decide_policy(make_result(intent="set_camera_gain"), make_intent())
 

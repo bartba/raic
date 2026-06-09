@@ -36,7 +36,9 @@ def test_schema_manager_loads_real_files():
     assert manager.get_device("machine_inspection").components[1].id == "led_light"
     assert all(device.aliases for device in manager.devices)
     assert all(manager.get_device(device.id) is not None for device in manager.devices)
-    assert len(manager.list_seed_examples()) == 65
+    seed_examples = manager.list_seed_examples()
+    assert len(seed_examples) >= 100
+    assert len(seed_examples) == len(set(seed_examples))
 
 
 def test_schema_manager_rejects_duplicate_intent_name(tmp_path):
@@ -192,6 +194,37 @@ def test_schema_manager_classmethod_keeps_working():
     )
 
     assert manager.get_intent("check_status") is not None
+
+
+def test_schema_manager_lists_seed_records_with_intent_metadata():
+    manager = load_schema(
+        str(ROOT_DIR / "data" / "intents.yaml"),
+        str(ROOT_DIR / "data" / "devices.yaml"),
+    )
+
+    records = manager.list_seed_records()
+    exposure_record = next(
+        record
+        for record in records
+        if record["seed_utterance"] == "카메라 노출값 800으로 바꿔"
+    )
+    emergency_record = next(
+        record for record in records if record["seed_utterance"] == "비상정지해"
+    )
+
+    assert len(records) == len(manager.list_seed_examples())
+    assert exposure_record == {
+        "intent": "set_camera_exposure",
+        "seed_utterance": "카메라 노출값 800으로 바꿔",
+        "is_risky": False,
+        "target_scope": "component",
+        "required_capability": "camera.exposure.set",
+        "target_component_type": "camera",
+    }
+    assert emergency_record["intent"] == "emergency_stop"
+    assert emergency_record["is_risky"] is True
+    assert emergency_record["target_scope"] == "equipment"
+    assert emergency_record["target_component_type"] is None
 
 
 def test_schema_manager_rejects_unknown_required_capability(tmp_path):
