@@ -76,7 +76,7 @@ Jetson에서 통과한 테스트는 코드 로직 검증으로만 본다. 실사
 
 - [x] 0.2 QG-1 질문
   - 결정: `api/`를 코드 루트로 사용하는 방식 A로 진행한다.
-  - 실행 기준: 테스트는 `PYTHONPATH=api pytest` 방식으로 실행한다.
+  - 실행 기준: 테스트는 `PYTHONPATH=.:api pytest` 방식으로 실행한다.
   - 설명: import 경로를 짧고 단순하게 유지한다. 예: `from services.policy_engine import decide`
 
 - [x] 0.3 QG-2 질문

@@ -122,13 +122,13 @@ data/seed_index.npz
 docker/build.sh
 ```
 
-기본 이미지:
+`.env.example` 기준 기본 이미지:
 
 ```text
-intent-api:latest
+intent-api:v0
 ```
 
-`docker/build.sh`도 repository root의 `.env`를 자동으로 로드한다. 이미지 이름이나 태그를 바꾸려면 `.env` 또는 shell 환경 변수에서 `IMAGE_NAME`, `IMAGE_TAG`를 지정한다.
+`docker/build.sh`도 repository root의 `.env`를 자동으로 로드한다. `.env`가 없으면 script fallback은 `intent-api:latest`다. 이미지 이름이나 태그를 바꾸려면 `.env` 또는 shell 환경 변수에서 `IMAGE_NAME`, `IMAGE_TAG`를 지정한다.
 
 ## 7. API 컨테이너 실행
 
