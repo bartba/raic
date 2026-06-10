@@ -64,13 +64,44 @@ def test_docker_run_embedder_script_runs_tei_on_9091_without_reranker():
     assert script.exists()
     assert "set -euo pipefail" in content
     assert 'source "${ENV_FILE}"' in content
-    assert 'TEI_IMAGE="${TEI_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:latest}"' in content
+    assert 'TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8-ca}"' in content
     assert 'TEI_HOST_PORT="${TEI_HOST_PORT:-9091}"' in content
     assert 'TEI_CONTAINER_PORT="${TEI_CONTAINER_PORT:-80}"' in content
-    assert "--gpus all" in content
+    assert 'TEI_GPU_DEVICE="${TEI_GPU_DEVICE:-device=1}"' in content
+    assert '--gpus "${TEI_GPU_DEVICE}"' in content
     assert '-p "${TEI_HOST_PORT}:${TEI_CONTAINER_PORT}"' in content
+    assert '-e "HTTPS_PROXY=${HTTPS_PROXY:-}"' in content
+    assert '-e "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"' in content
     assert '--model-id "${EMBEDDING_MODEL_ID}"' in content
     assert "reranker" not in content.lower()
+
+
+def test_docker_build_embedder_script_wraps_tei_image_with_ca_certificate():
+    script = ROOT_DIR / "docker" / "build_embedder.sh"
+    content = script.read_text(encoding="utf-8")
+
+    assert script.exists()
+    assert "set -euo pipefail" in content
+    assert 'source "${ENV_FILE}"' in content
+    assert 'TEI_BASE_IMAGE="${TEI_BASE_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cuda-1.8}"' in content
+    assert 'TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8-ca}"' in content
+    assert 'TEI_CA_CERT_PATH="${TEI_CA_CERT_PATH:?TEI_CA_CERT_PATH is required}"' in content
+    assert 'cp "${TEI_CA_CERT_PATH}" "${BUILD_CONTEXT}/company-ca.crt"' in content
+    assert '--build-arg "TEI_BASE_IMAGE=${TEI_BASE_IMAGE}"' in content
+    assert '-t "${TEI_IMAGE}"' in content
+
+
+def test_tei_dockerfile_registers_company_ca_certificate():
+    dockerfile = ROOT_DIR / "docker" / "Dockerfile.tei"
+    content = dockerfile.read_text(encoding="utf-8")
+
+    assert dockerfile.exists()
+    assert "ARG TEI_BASE_IMAGE=ghcr.io/huggingface/text-embeddings-inference:cuda-1.8" in content
+    assert "FROM ${TEI_BASE_IMAGE}" in content
+    assert "USER root" in content
+    assert "COPY company-ca.crt /usr/local/share/ca-certificates/company-ca.crt" in content
+    assert "update-ca-certificates" in content
+    assert "ca-certificates.crt" in content
 
 
 def test_env_example_documents_deploy_settings():
@@ -83,7 +114,11 @@ def test_env_example_documents_deploy_settings():
     assert "API_AUTH_TOKEN=" in content
     assert "EMBEDDER_URL=" in content
     assert "HOST_EMBEDDER_URL=http://localhost:9091" in content
+    assert "TEI_BASE_IMAGE=ghcr.io/huggingface/text-embeddings-inference:cuda-1.8" in content
+    assert "TEI_IMAGE=raic-tei-embedder:cuda-1.8-ca" in content
     assert "TEI_HOST_PORT=9091" in content
+    assert "TEI_GPU_DEVICE=device=1" in content
+    assert "TEI_CA_CERT_PATH=/opt/raic/certs/company-ca.crt" in content
     assert "EMBEDDING_MODEL_ID=Qwen/Qwen3-Embedding-0.6B" in content
     assert "VECTOR_INDEX_PATH=/app/data/seed_index.npz" in content
     assert "HOST_VECTOR_INDEX_PATH=data/seed_index.npz" in content

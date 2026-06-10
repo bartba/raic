@@ -51,6 +51,7 @@ cd /opt/raic
 - `.venv/`
 - `.pytest_cache/`
 - `__pycache__/`
+- 사내 인증서 원본 파일
 
 ## 3. 환경 변수 파일 작성
 
@@ -68,7 +69,10 @@ EMBEDDER_URL=http://host.docker.internal:9091
 HOST_EMBEDDER_URL=http://localhost:9091
 TEI_HOST_PORT=9091
 TEI_CONTAINER_PORT=80
-TEI_IMAGE=ghcr.io/huggingface/text-embeddings-inference:latest
+TEI_BASE_IMAGE=ghcr.io/huggingface/text-embeddings-inference:cuda-1.8
+TEI_IMAGE=raic-tei-embedder:cuda-1.8-ca
+TEI_GPU_DEVICE=device=1
+TEI_CA_CERT_PATH=/opt/raic/certs/company-ca.crt
 EMBEDDING_MODEL_ID=Qwen/Qwen3-Embedding-0.6B
 VECTOR_INDEX_PATH=/app/data/seed_index.npz
 HOST_VECTOR_INDEX_PATH=data/seed_index.npz
@@ -86,10 +90,20 @@ CONTAINER_PORT=9090
 - API 컨테이너가 같은 서버의 TEI 호스트 포트로 붙을 때는 `EMBEDDER_URL=http://host.docker.internal:9091`을 사용한다.
 - host에서 index를 만들 때는 `HOST_EMBEDDER_URL=http://localhost:9091`을 사용한다.
 - Docker network로 두 컨테이너를 묶는 경우에는 `EMBEDDER_URL=http://tei-embedder:80`처럼 컨테이너 이름을 사용할 수 있다.
+- `TEI_CA_CERT_PATH`에는 x86 서버에만 저장된 사내 CA 인증서 `.crt` 파일 경로를 입력한다. 인증서 파일은 Git에 커밋하지 않는다.
+- 사내 프록시가 필요하면 `.env`에 `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`를 추가한다. `docker/run_embedder.sh`는 이 값을 TEI 컨테이너로 전달한다.
 
-## 4. TEI embedder 실행
+## 4. TEI embedder 이미지 빌드와 실행
 
-TEI embedder는 별도 컨테이너로 실행한다. 이미지 태그와 모델 ID는 x86 서버에서 사용할 embedding 모델에 맞춰 `.env`에서 고정한다.
+TEI embedder는 별도 컨테이너로 실행한다. 사내망 인증서 검증 오류를 피하기 위해 먼저 TEI 기본 이미지를 감싸는 local 이미지를 빌드한다.
+
+```bash
+docker/build_embedder.sh
+```
+
+`docker/build_embedder.sh`는 `.env`의 `TEI_BASE_IMAGE`를 base image로 사용하고, `TEI_CA_CERT_PATH`의 사내 CA 인증서를 이미지 trust store에 등록한 뒤 `TEI_IMAGE` 이름으로 빌드한다.
+
+이미지를 빌드한 뒤 TEI 컨테이너를 실행한다.
 
 ```bash
 docker/run_embedder.sh
@@ -191,6 +205,9 @@ curl http://localhost:9091/embed \
 
 - [ ] repository 또는 필수 파일 복사 완료
 - [ ] `.env.example`을 `.env`로 복사하고 서버 값 반영
+- [ ] `TEI_CA_CERT_PATH`에 사내 CA 인증서 경로 반영
+- [ ] 사내 프록시가 필요하면 `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` 반영
+- [ ] `docker/build_embedder.sh`로 사내 CA 포함 TEI 이미지 빌드
 - [ ] `docker/run_embedder.sh` 실행
 - [ ] `curl http://localhost:9091/embed ...`로 TEI 응답 확인
 - [ ] `python3 -m venv .venv` 및 `pip install -r api/requirements-x86.txt` 완료

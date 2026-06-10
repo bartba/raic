@@ -1,0 +1,10 @@
+ARG TEI_BASE_IMAGE=ghcr.io/huggingface/text-embeddings-inference:cuda-1.8
+FROM ${TEI_BASE_IMAGE}
+
+USER root
+COPY company-ca.crt /usr/local/share/ca-certificates/company-ca.crt
+RUN if command -v update-ca-certificates >/dev/null 2>&1; then \
+      update-ca-certificates; \
+    else \
+      cat /usr/local/share/ca-certificates/company-ca.crt >> /etc/ssl/certs/ca-certificates.crt; \
+    fi

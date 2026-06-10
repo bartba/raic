@@ -12,17 +12,26 @@ if [ -f "${ENV_FILE}" ]; then
   set +a
 fi
 
-TEI_IMAGE="${TEI_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:latest}"
+TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8-ca}"
 TEI_CONTAINER_NAME="${TEI_CONTAINER_NAME:-tei-embedder}"
 TEI_HOST_PORT="${TEI_HOST_PORT:-9091}"
 TEI_CONTAINER_PORT="${TEI_CONTAINER_PORT:-80}"
+TEI_GPU_DEVICE="${TEI_GPU_DEVICE:-device=1}"
 EMBEDDING_MODEL_ID="${EMBEDDING_MODEL_ID:-Qwen/Qwen3-Embedding-0.6B}"
 
 docker rm -f "${TEI_CONTAINER_NAME}" >/dev/null 2>&1 || true
 
 docker run -d \
   --name "${TEI_CONTAINER_NAME}" \
-  --gpus all \
+  --gpus "${TEI_GPU_DEVICE}" \
   -p "${TEI_HOST_PORT}:${TEI_CONTAINER_PORT}" \
+  -e "HTTP_PROXY=${HTTP_PROXY:-}" \
+  -e "HTTPS_PROXY=${HTTPS_PROXY:-}" \
+  -e "NO_PROXY=${NO_PROXY:-localhost,127.0.0.1}" \
+  -e "http_proxy=${http_proxy:-${HTTP_PROXY:-}}" \
+  -e "https_proxy=${https_proxy:-${HTTPS_PROXY:-}}" \
+  -e "no_proxy=${no_proxy:-${NO_PROXY:-localhost,127.0.0.1}}" \
+  -e "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt" \
+  -e "REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt" \
   "${TEI_IMAGE}" \
   --model-id "${EMBEDDING_MODEL_ID}"
