@@ -17,6 +17,7 @@
 - [PRD](docs/PRD.md): 제품 요구사항과 안전 정책
 - [구현 계획](docs/PLAN_CODING.md): MVP 구조, 모듈 책임, 작업 목록
 - [x86 배포 절차](docs/X86_DEPLOYMENT.md): x86 GPU 서버 Docker/TEI/API 수동 실행 절차
+- [디바이스 추가 가이드](docs/DEVICE_ONBOARDING.md): 라인, 장비, 컴포넌트 추가 절차
 - [작업 원칙](AGENTS.md): 단순성, 가독성, 최소 변경 원칙
 
 HTML 문서는 `docs/html/` 아래에 있습니다.

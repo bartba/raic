@@ -133,6 +133,8 @@ data/seed_index.npz
 
 `docker/run.sh`는 host의 `data/` 디렉터리를 컨테이너의 `/app/data`로 read-only mount한다. 따라서 위 파일은 컨테이너 내부에서 `/app/data/seed_index.npz`로 보인다.
 
+디바이스를 추가하거나 수정할 때는 먼저 [Device Onboarding Guide](DEVICE_ONBOARDING.md)를 따른다. `devices.yaml`만 바꾼 경우에는 API 재시작으로 반영하고, `intents.yaml`의 `seed_utterances`를 바꾼 경우에는 이 단계의 index 생성을 다시 수행한다.
+
 ## 6. API 이미지 빌드
 
 ```bash
