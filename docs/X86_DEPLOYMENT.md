@@ -73,7 +73,9 @@ TEI_BASE_IMAGE=ghcr.io/huggingface/text-embeddings-inference:cuda-1.8
 TEI_IMAGE=raic-tei-embedder:cuda-1.8-ca
 TEI_GPU_DEVICE=device=1
 TEI_CA_CERT_PATH=/opt/raic/certs/company-ca.crt
-EMBEDDING_MODEL_ID=Qwen/Qwen3-Embedding-0.6B
+TEI_DTYPE=float16
+TEI_POOLING=cls
+EMBEDDING_MODEL_ID=BAAI/bge-m3
 VECTOR_INDEX_PATH=/app/data/seed_index.npz
 HOST_VECTOR_INDEX_PATH=data/seed_index.npz
 VECTOR_INDEX_USE_FAISS=true
@@ -92,6 +94,7 @@ CONTAINER_PORT=9090
 - Docker network로 두 컨테이너를 묶는 경우에는 `EMBEDDER_URL=http://tei-embedder:80`처럼 컨테이너 이름을 사용할 수 있다.
 - `TEI_CA_CERT_PATH`에는 x86 서버에만 저장된 사내 CA 인증서 `.crt` 파일 경로를 입력한다. 인증서 파일은 Git에 커밋하지 않는다.
 - 사내 프록시가 필요하면 `.env`에 `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`를 추가한다. `docker/run_embedder.sh`는 이 값을 TEI 컨테이너로 전달한다.
+- BGE-M3 모델은 `cls` pooling 을 사용한다. `TEI_POOLING=cls`, `TEI_DTYPE=float16` 으로 설정한다.
 
 ## 4. TEI embedder 이미지 빌드와 실행
 
@@ -181,7 +184,7 @@ curl -X POST http://localhost:9090/v1/classify \
 - intent/device YAML schema
 - `VectorStore` from `/app/data/seed_index.npz`
 - TEI `EmbedderClient`
-- LangChain 기반 LLM client
+- httpx 기반 OpenAI-compatible LLM client
 - classification pipeline
 
 `/ready`가 `ok`이면 schema, index, settings, pipeline 조립이 완료된 상태다. `not_ready`이면 응답의 `checks`와 `bootstrap_error`를 먼저 확인한다.

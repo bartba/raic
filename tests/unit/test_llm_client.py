@@ -1,115 +1,226 @@
+import json
+from unittest.mock import Mock, patch
+
+import httpx
+
 from services.llm_client import LLMClient, LLMClientError
 
 
-class FakeResponse:
-    def __init__(self, content):
-        self.content = content
+def test_generate_json_sends_correct_http_payload():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"intent":"test","slots":{},"confidence_score":0.9}'}}]
+    }
 
-
-class FakeChatModel:
-    def __init__(self, response):
-        self.response = response
-        self.messages = None
-
-    def invoke(self, messages):
-        self.messages = messages
-        return self.response
-
-
-class FailingChatModel:
-    def invoke(self, messages):
-        raise RuntimeError("server error")
-
-
-class TimeoutChatModel:
-    def invoke(self, messages):
-        raise TimeoutError("too slow")
-
-
-def test_generate_json_invokes_langchain_chat_model_with_prompts():
-    chat_model = FakeChatModel(
-        FakeResponse('{"intent":"check_status","slots":{},"confidence_score":0.9}')
-    )
-    client = LLMClient(
-        base_url="http://llm.local/v1/",
-        model_name="Qwen3.5-35B-A3B",
-        chat_model=chat_model,
-    )
-
-    result = client.generate_json("system prompt", "user prompt")
-
-    assert result == '{"intent":"check_status","slots":{},"confidence_score":0.9}'
-    assert chat_model.messages == [
-        ("system", "system prompt"),
-        ("human", "user prompt"),
-    ]
-    assert client.base_url == "http://llm.local/v1"
-
-
-def test_generate_json_extracts_text_content_blocks():
-    chat_model = FakeChatModel(
-        FakeResponse(
-            [
-                {"type": "text", "text": '{"intent":"check_status",'},
-                {"type": "text", "text": '"slots":{},"confidence_score":0.9}'},
-            ]
+    with patch("httpx.Client.post", return_value=mock_response) as mock_post:
+        client = LLMClient(
+            base_url="http://llm.local/v1",
+            model_name="test-model",
+            timeout_ms=1000,
         )
-    )
-    client = LLMClient(
-        base_url="http://llm.local/v1",
-        model_name="Qwen3.5-35B-A3B",
-        chat_model=chat_model,
-    )
+        result = client.generate_json("system", "user")
 
-    assert (
-        client.generate_json("system prompt", "user prompt")
-        == '{"intent":"check_status","slots":{},"confidence_score":0.9}'
-    )
-
-
-def test_generate_json_rejects_empty_content():
-    client = LLMClient(
-        base_url="http://llm.local/v1",
-        model_name="Qwen3.5-35B-A3B",
-        chat_model=FakeChatModel(FakeResponse("")),
-    )
-
-    try:
-        client.generate_json("system prompt", "user prompt")
-    except LLMClientError as error:
-        assert str(error) == "llm response content is empty"
-        return
-
-    raise AssertionError("empty llm response should fail")
+        assert result == '{"intent":"test","slots":{},"confidence_score":0.9}'
+        call_args = mock_post.call_args
+        assert call_args[0][0] == "http://llm.local/v1/chat/completions"
+        assert call_args[1]["json"]["model"] == "test-model"
+        assert call_args[1]["json"]["stream"] is False
+        assert len(call_args[1]["json"]["messages"]) == 2
+        assert call_args[1]["json"]["messages"][0]["role"] == "system"
+        assert call_args[1]["json"]["messages"][0]["content"] == "system"
+        assert call_args[1]["json"]["messages"][1]["role"] == "user"
+        assert call_args[1]["json"]["messages"][1]["content"] == "user"
 
 
-def test_generate_json_wraps_model_error():
-    client = LLMClient(
-        base_url="http://llm.local/v1",
-        model_name="Qwen3.5-35B-A3B",
-        chat_model=FailingChatModel(),
-    )
+def test_generate_json_sets_auth_header():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"intent":"test","slots":{},"confidence_score":0.9}'}}]
+    }
 
-    try:
-        client.generate_json("system prompt", "user prompt")
-    except LLMClientError as error:
-        assert str(error) == "llm request failed: server error"
-        return
+    with patch("httpx.Client.post", return_value=mock_response) as mock_post:
+        client = LLMClient(
+            base_url="http://llm.local/v1",
+            model_name="test-model",
+            api_key="test-token",
+        )
+        client.generate_json("system", "user")
 
-    raise AssertionError("llm model error should fail")
+        assert mock_post.call_args[1]["headers"]["Authorization"] == "Bearer test-token"
+        assert mock_post.call_args[1]["headers"]["Content-Type"] == "application/json"
 
 
-def test_generate_json_wraps_timeout_error():
-    client = LLMClient(
-        base_url="http://llm.local/v1",
-        model_name="Qwen3.5-35B-A3B",
-        chat_model=TimeoutChatModel(),
-    )
+def test_generate_json_applies_timeout():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"intent":"test","slots":{},"confidence_score":0.9}'}}]
+    }
 
-    try:
-        client.generate_json("system prompt", "user prompt")
-    except LLMClientError as error:
-        assert str(error) == "llm request timed out"
-        return
+    with patch("httpx.Client.post", return_value=mock_response) as mock_post:
+        client = LLMClient(base_url="http://llm.local/v1", model_name="test", timeout_ms=800)
+        client.generate_json("system", "user")
 
-    raise AssertionError("llm timeout should fail")
+        # Verify timeout was used
+        assert client.timeout_ms == 800
+        assert client.timeout.connect == 0.8
+        assert client.timeout.read == 0.8
+        # Verify post was called
+        assert mock_post.called
+
+
+def test_generate_json_handles_timeout_exception():
+    with patch("httpx.Client.post", side_effect=httpx.TimeoutException("timed out")):
+        client = LLMClient(base_url="http://llm.local/v1", model_name="test", timeout_ms=800)
+
+        try:
+            client.generate_json("system", "user")
+            assert False, "should raise LLMClientError"
+        except LLMClientError as e:
+            assert "timed out" in str(e).lower()
+
+
+def test_generate_json_handles_request_error():
+    with patch("httpx.Client.post", side_effect=httpx.ConnectError("connection failed")):
+        client = LLMClient(base_url="http://llm.local/v1", model_name="test", timeout_ms=800)
+
+        try:
+            client.generate_json("system", "user")
+            assert False, "should raise LLMClientError"
+        except LLMClientError as e:
+            assert "connection failed" in str(e)
+
+
+def test_generate_json_retries_timeout_then_returns_success():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"intent":"test","slots":{},"confidence_score":0.9}'}}]
+    }
+
+    with patch(
+        "httpx.Client.post",
+        side_effect=[httpx.TimeoutException("timed out"), mock_response],
+    ) as mock_post:
+        client = LLMClient(
+            base_url="http://llm.local/v1",
+            model_name="test",
+            timeout_ms=800,
+            max_retries=1,
+        )
+
+        result = client.generate_json("system", "user")
+
+        assert result == '{"intent":"test","slots":{},"confidence_score":0.9}'
+        assert mock_post.call_count == 2
+
+
+def test_generate_json_retries_server_error_then_returns_success():
+    server_error = Mock(spec=httpx.Response)
+    server_error.status_code = 503
+    server_error.text = "Service Unavailable"
+
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"intent":"test","slots":{},"confidence_score":0.9}'}}]
+    }
+
+    with patch(
+        "httpx.Client.post",
+        side_effect=[server_error, mock_response],
+    ) as mock_post:
+        client = LLMClient(
+            base_url="http://llm.local/v1",
+            model_name="test",
+            timeout_ms=800,
+            max_retries=1,
+        )
+
+        result = client.generate_json("system", "user")
+
+        assert result == '{"intent":"test","slots":{},"confidence_score":0.9}'
+        assert mock_post.call_count == 2
+
+
+def test_generate_json_does_not_retry_client_error_status():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 401
+    mock_response.text = "Unauthorized"
+
+    with patch("httpx.Client.post", return_value=mock_response) as mock_post:
+        client = LLMClient(
+            base_url="http://llm.local/v1",
+            model_name="test",
+            timeout_ms=800,
+            max_retries=3,
+        )
+
+        try:
+            client.generate_json("system", "user")
+            assert False, "should raise LLMClientError"
+        except LLMClientError as e:
+            assert "401" in str(e)
+            assert mock_post.call_count == 1
+
+
+def test_generate_json_handles_http_error_status():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 401
+    mock_response.text = "Unauthorized"
+
+    with patch("httpx.Client.post", return_value=mock_response):
+        client = LLMClient(base_url="http://llm.local/v1", model_name="test", timeout_ms=800)
+
+        try:
+            client.generate_json("system", "user")
+            assert False, "should raise LLMClientError"
+        except LLMClientError as e:
+            assert "401" in str(e)
+
+
+def test_generate_json_handles_invalid_json():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.side_effect = json.JSONDecodeError("expecting value", "response", 0)
+
+    with patch("httpx.Client.post", return_value=mock_response):
+        client = LLMClient(base_url="http://llm.local/v1", model_name="test", timeout_ms=800)
+
+        try:
+            client.generate_json("system", "user")
+            assert False, "should raise LLMClientError"
+        except LLMClientError as e:
+            assert "valid json" in str(e).lower()
+
+
+def test_generate_json_handles_missing_fields():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"choices": []}
+
+    with patch("httpx.Client.post", return_value=mock_response):
+        client = LLMClient(base_url="http://llm.local/v1", model_name="test", timeout_ms=800)
+
+        try:
+            client.generate_json("system", "user")
+            assert False, "should raise LLMClientError"
+        except LLMClientError as e:
+            assert "missing expected fields" in str(e).lower()
+
+
+def test_generate_json_handles_empty_content():
+    mock_response = Mock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"choices": [{"message": {"content": ""}}]}
+
+    with patch("httpx.Client.post", return_value=mock_response):
+        client = LLMClient(base_url="http://llm.local/v1", model_name="test", timeout_ms=800)
+
+        try:
+            client.generate_json("system", "user")
+            assert False, "should raise LLMClientError"
+        except LLMClientError as e:
+            assert "empty" in str(e).lower()

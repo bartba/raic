@@ -59,8 +59,8 @@ def build_device_block(
     lines = ["Device candidates:"]
     for device in device_list:
         lines.append("- device_id: {0}".format(device.id))
-        lines.append("  type: {0}".format(device.type))
-        lines.append("  line: {0}".format(device.line))
+        lines.append("  line_id: {0}".format(device.line_id))
+        lines.append("  line_aliases: {0}".format(device.line_aliases))
         lines.append("  aliases: {0}".format(device.aliases))
         lines.append("  capabilities: {0}".format(device.capabilities))
 
@@ -72,7 +72,6 @@ def build_device_block(
 
         for component in component_candidates:
             lines.append("    - component_id: {0}".format(component.id))
-            lines.append("      type: {0}".format(component.type))
             lines.append("      aliases: {0}".format(component.aliases))
             lines.append("      capabilities: {0}".format(component.capabilities))
 

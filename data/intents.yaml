@@ -11,6 +11,9 @@ intents:
       - name: machine_id
         type: string
         required: true
+      - name: line_id
+        type: string
+        required: true
     seed_utterances:
       - "장비 시작해"
       - "설비 가동해"
@@ -28,6 +31,9 @@ intents:
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
     seed_utterances:
@@ -49,6 +55,9 @@ intents:
       - name: machine_id
         type: string
         required: true
+      - name: line_id
+        type: string
+        required: true
     seed_utterances:
       - "장비 비상 정지"
       - "비상정지해"
@@ -66,6 +75,9 @@ intents:
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
     seed_utterances:
@@ -87,6 +99,9 @@ intents:
       - name: machine_id
         type: string
         required: true
+      - name: line_id
+        type: string
+        required: true
       - name: model_name
         type: string
         required: true
@@ -102,12 +117,14 @@ intents:
   - name: set_light_intensity
     description: "조명 밝기를 설정한다."
     target_scope: component
-    target_component_type: led_light
     required_capability: light.intensity.set
     is_risky: false
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -130,12 +147,14 @@ intents:
   - name: set_camera_exposure
     description: "카메라 exposure 값을 설정한다."
     target_scope: component
-    target_component_type: camera
     required_capability: camera.exposure.set
     is_risky: false
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -158,12 +177,14 @@ intents:
   - name: set_camera_gain
     description: "카메라 gain 값을 설정한다."
     target_scope: component
-    target_component_type: camera
     required_capability: camera.gain.set
     is_risky: false
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -186,12 +207,14 @@ intents:
   - name: set_robot_speed
     description: "로봇 속도를 설정한다."
     target_scope: component
-    target_component_type: robot
     required_capability: robot.speed.set
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -219,12 +242,14 @@ intents:
   - name: check_plc_status
     description: "PLC 상태를 조회한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.status.read
     is_risky: false
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -242,12 +267,14 @@ intents:
   - name: plc_reset
     description: "PLC를 리셋한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.reset
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -269,12 +296,14 @@ intents:
   - name: plc_bring_in
     description: "PLC 투입 동작을 실행한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.bring_in
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -293,12 +322,14 @@ intents:
   - name: plc_align
     description: "PLC 정렬 동작을 실행한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.align
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -320,12 +351,14 @@ intents:
   - name: plc_move_up
     description: "PLC 상승 동작을 실행한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.up
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -347,12 +380,14 @@ intents:
   - name: plc_rotate
     description: "PLC 회전 동작을 실행한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.rotate
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -373,12 +408,14 @@ intents:
   - name: plc_move_down
     description: "PLC 하강 동작을 실행한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.down
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -398,12 +435,14 @@ intents:
   - name: plc_flip
     description: "PLC 뒤집기 동작을 실행한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.flip
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id
@@ -425,12 +464,14 @@ intents:
   - name: plc_send_out
     description: "PLC 반출 동작을 실행한다."
     target_scope: component
-    target_component_type: plc
     required_capability: plc.send_out
     is_risky: true
     allowed_decisions: ["confirm", "reject", "execute"]
     slots:
       - name: machine_id
+        type: string
+        required: true
+      - name: line_id
         type: string
         required: true
       - name: component_id

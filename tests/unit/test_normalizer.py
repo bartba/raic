@@ -4,6 +4,7 @@ from services.normalizer import (
     find_component_ids,
     find_device_candidates,
     find_device_ids,
+    find_line_ids,
     normalize_match_text,
     normalize_text,
 )
@@ -45,6 +46,13 @@ def test_find_device_candidates_matches_real_aliases():
     assert [device.id for device in candidates] == ["machine_inspection"]
 
 
+def test_find_device_candidates_matches_machine_alias_without_line_text():
+    schema_manager = load_real_schema()
+    candidates = find_device_candidates("검사기 상태 확인", schema_manager)
+
+    assert [device.id for device in candidates] == ["machine_inspection"]
+
+
 def test_find_device_candidates_matches_spacing_variants():
     schema_manager = load_real_schema()
     candidates = find_device_candidates("포장검사기 상태 확인", schema_manager)
@@ -66,6 +74,48 @@ def test_find_device_ids_matches_device_alias_with_component_text():
     )
 
     assert device_ids == ["machine_inspection"]
+
+
+def test_find_line_ids_matches_line_id():
+    schema_manager = load_real_schema()
+
+    assert find_line_ids("line_packaging 포장 검사기 상태 확인", schema_manager) == [
+        "line_packaging"
+    ]
+
+
+def test_find_line_ids_matches_line_alias():
+    schema_manager = load_real_schema()
+
+    assert find_line_ids("포장 검사기 상태 확인", schema_manager) == [
+        "line_packaging"
+    ]
+
+
+def test_target_candidates_match_natural_line_machine_component_phrase():
+    schema_manager = load_real_schema()
+    device = schema_manager.get_device("machine_inspection")
+    text = "포장 검사기 조명 100 으로 맞춰"
+
+    assert find_line_ids(text, schema_manager) == ["line_packaging"]
+    assert find_device_ids(text, schema_manager) == ["machine_inspection"]
+    assert find_component_ids(text, device) == ["led_light"]
+
+
+def test_target_candidates_match_regardless_of_phrase_order():
+    schema_manager = load_real_schema()
+    device = schema_manager.get_device("machine_inspection")
+    texts = [
+        "포장 검사기 로봇 속도 50으로 줄여",
+        "로봇 속도 50으로 포장 검사기 줄여",
+        "속도 50으로 줄여 포장 검사기 로봇",
+        "검사기 로봇 속도 50으로 포장 라인 줄여",
+    ]
+
+    for text in texts:
+        assert find_line_ids(text, schema_manager) == ["line_packaging"]
+        assert find_device_ids(text, schema_manager) == ["machine_inspection"]
+        assert find_component_ids(text, device) == ["robot"]
 
 
 def test_find_component_ids_matches_spacing_variants():

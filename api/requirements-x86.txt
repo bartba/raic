@@ -1,2 +1,2 @@
 -r requirements.txt
-faiss-cpu==1.9.*
+faiss-cpu==1.8.*

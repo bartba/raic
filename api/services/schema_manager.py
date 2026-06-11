@@ -49,7 +49,6 @@ class SchemaManager:
                         "is_risky": intent.is_risky,
                         "target_scope": intent.target_scope,
                         "required_capability": intent.required_capability,
-                        "target_component_type": intent.target_component_type,
                     }
                 )
         return records
@@ -139,22 +138,40 @@ def _validate_intent(intent: IntentDef, valid_capabilities: Set[str]) -> None:
             )
         )
 
-    if intent.target_scope == "equipment" and intent.target_component_type is not None:
-        raise SchemaError(
-            "equipment intent cannot define target component type: {0}".format(
-                intent.name
-            )
-        )
+    _validate_required_slot(intent, "machine_id")
+    _validate_required_slot(intent, "line_id")
 
-    if intent.target_scope == "component" and intent.target_component_type is None:
-        raise SchemaError(
-            "component intent must define target component type: {0}".format(
-                intent.name
-            )
-        )
+    if intent.target_scope == "component":
+        _validate_component_slot(intent)
 
     for slot in intent.slots:
         _validate_slot(intent, slot)
+
+
+def _validate_required_slot(intent: IntentDef, name: str) -> None:
+    slot = _find_slot(intent, name)
+    if slot is None or not slot.required or slot.type != "string":
+        raise SchemaError(
+            "intent must define required string slot: {0}.{1}".format(
+                intent.name,
+                name,
+            )
+        )
+
+
+def _validate_component_slot(intent: IntentDef) -> None:
+    slot = _find_slot(intent, "component_id")
+    if slot is None or slot.type != "string":
+        raise SchemaError(
+            "component intent must define component_id slot: {0}".format(intent.name)
+        )
+
+
+def _find_slot(intent: IntentDef, name: str) -> Optional[SlotDef]:
+    for slot in intent.slots:
+        if slot.name == name:
+            return slot
+    return None
 
 
 def _collect_capabilities(devices: List[DeviceDef]) -> Set[str]:

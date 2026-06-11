@@ -53,3 +53,4 @@ def test_build_index_shell_script_loads_env_and_uses_host_embedder_url():
     assert 'HOST_VECTOR_INDEX_PATH="${HOST_VECTOR_INDEX_PATH:-${DATA_DIR}/seed_index.npz}"' in content
     assert '--embedder-url "${HOST_EMBEDDER_URL}"' in content
     assert '--output-path "${HOST_VECTOR_INDEX_PATH}"' in content
+    assert '"$@"' in content

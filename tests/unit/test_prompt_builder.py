@@ -114,8 +114,8 @@ def test_build_device_block_includes_device_candidate_capabilities():
     block = build_device_block(devices)
 
     assert "device_id: machine_inspection" in block
-    assert "type: vision_inspection" in block
-    assert "line: line_packaging" in block
+    assert "line_id: line_packaging" in block
+    assert "line_aliases: ['포장', '포장 라인']" in block
     assert "machine.status.read" in block
     assert "component_candidates:\n    - none" in block
 
@@ -138,5 +138,4 @@ def test_build_device_block_includes_component_candidate_capabilities():
 
     assert "device_id: machine_inspection" in block
     assert "component_id: camera" in block
-    assert "type: camera" in block
     assert "camera.exposure.set" in block

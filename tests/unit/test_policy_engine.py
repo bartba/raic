@@ -13,12 +13,12 @@ def make_intent(
         name=name,
         description="test intent",
         target_scope="component",
-        target_component_type="led_light",
         required_capability="light.intensity.set",
         is_risky=is_risky,
         allowed_decisions=allowed_decisions or ["confirm", "reject", "execute"],
         slots=[
             SlotDef(name="machine_id", type="string", required=True),
+            SlotDef(name="line_id", type="string", required=True),
             SlotDef(name="value", type="integer", required=True, min=0, max=255),
         ],
         seed_utterances=["조명 100으로 맞춰"],
@@ -34,7 +34,11 @@ def make_result(
 ) -> ValidatedResult:
     return ValidatedResult(
         intent=intent,
-        slots={"machine_id": "machine_inspection", "value": 100},
+        slots={
+            "machine_id": "machine_inspection",
+            "line_id": "line_packaging",
+            "value": 100,
+        },
         confidence=confidence,
         confidence_score=confidence_score,
         is_risky=is_risky,

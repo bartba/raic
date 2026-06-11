@@ -5,7 +5,11 @@ from typing import Any, Callable, Dict, Iterable, List
 from models.request import ClassifyRequest
 from models.response import ClassifyResponse
 from models.schema import Candidate, PolicyDecision, ValidatedResult
-from services.normalizer import find_component_candidates, find_device_candidates
+from services.normalizer import (
+    find_component_candidates,
+    find_device_candidates,
+    find_line_ids,
+)
 from services.prompt_builder import (
     build_candidate_block,
     build_device_block,
@@ -62,6 +66,12 @@ def build_classify_normalized(
 ) -> ClassifyFn:
     def classify_normalized(normalized_utterance: str) -> ValidatedResult:
         device_candidates = find_device_candidates(normalized_utterance, schema_manager)
+        line_ids = find_line_ids(normalized_utterance, schema_manager)
+        if not line_ids:
+            return _invalid_pipeline_result("missing required slot: line_id")
+        if not device_candidates:
+            return _invalid_pipeline_result("missing required slot: machine_id")
+
         component_candidates_by_device = {
             device.id: find_component_candidates(normalized_utterance, device)
             for device in device_candidates
@@ -93,6 +103,8 @@ def build_classify_normalized(
             schema_manager,
             confidence_high=confidence_high,
             confidence_low=confidence_low,
+            allowed_machine_ids=[device.id for device in device_candidates],
+            allowed_line_ids=line_ids,
         )
 
     return classify_normalized

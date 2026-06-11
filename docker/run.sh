@@ -40,6 +40,7 @@ docker run -d \
   -e "LLM_MAX_RETRIES=${LLM_MAX_RETRIES:-0}" \
   -e "EMBEDDER_URL=${EMBEDDER_URL}" \
   -e "EMBEDDER_TIMEOUT_MS=${EMBEDDER_TIMEOUT_MS:-800}" \
+  -e "NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,host.docker.internal}" \
   -e "FAISS_TOP_K=${FAISS_TOP_K:-10}" \
   -e "CONFIDENCE_HIGH=${CONFIDENCE_HIGH:-0.85}" \
   -e "CONFIDENCE_LOW=${CONFIDENCE_LOW:-0.60}" \

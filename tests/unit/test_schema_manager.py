@@ -23,15 +23,17 @@ def test_schema_manager_loads_real_files():
     assert manager.get_intent("set_camera_exposure").required_capability == (
         "camera.exposure.set"
     )
-    assert manager.get_intent("set_camera_exposure").target_component_type == "camera"
-    assert manager.get_intent("set_light_intensity").target_component_type == "led_light"
     assert manager.get_intent("emergency_stop").required_capability == (
         "machine.emergency_stop"
     )
     assert manager.get_intent("plc_reset").required_capability == "plc.reset"
-    assert manager.get_intent("plc_send_out").target_component_type == "plc"
     assert manager.get_intent("check_status").target_scope == "equipment"
     assert len(manager.devices) == 1
+    assert manager.get_device("machine_inspection").line_id == "line_packaging"
+    assert manager.get_device("machine_inspection").line_aliases == [
+        "포장",
+        "포장 라인",
+    ]
     assert manager.get_device("machine_inspection").components[0].id == "camera"
     assert manager.get_device("machine_inspection").components[1].id == "led_light"
     assert all(device.aliases for device in manager.devices)
@@ -55,7 +57,13 @@ intents:
     required_capability: machine.start
     is_risky: false
     allowed_decisions: ["confirm"]
-    slots: []
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: line_id
+        type: string
+        required: true
     seed_utterances: []
   - name: start_machine
     description: "start again"
@@ -63,7 +71,13 @@ intents:
     required_capability: machine.start
     is_risky: false
     allowed_decisions: ["confirm"]
-    slots: []
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: line_id
+        type: string
+        required: true
     seed_utterances: []
 """,
     )
@@ -73,8 +87,7 @@ intents:
 version: "1.0"
 devices:
   - id: test_machine
-    type: test_machine
-    line: line_a
+    line_id: line_a
     aliases: ["테스트 장비"]
     capabilities: ["machine.unit.set"]
     components: []
@@ -101,12 +114,10 @@ intents: []
 version: "1.0"
 devices:
   - id: conveyor_3
-    type: conveyor
-    line: line_a
+    line_id: line_a
     aliases: []
   - id: conveyor_3
-    type: conveyor
-    line: line_b
+    line_id: line_b
     aliases: []
 """,
     )
@@ -163,6 +174,12 @@ intents:
     is_risky: false
     allowed_decisions: ["confirm"]
     slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: line_id
+        type: string
+        required: true
       - name: unit
         type: enum
         required: true
@@ -175,8 +192,7 @@ intents:
 version: "1.0"
 devices:
   - id: test_machine
-    type: test_machine
-    line: line_a
+    line_id: line_a
     aliases: ["테스트 장비"]
     capabilities: ["machine.unit.set"]
     components: []
@@ -219,12 +235,10 @@ def test_schema_manager_lists_seed_records_with_intent_metadata():
         "is_risky": False,
         "target_scope": "component",
         "required_capability": "camera.exposure.set",
-        "target_component_type": "camera",
     }
     assert emergency_record["intent"] == "emergency_stop"
     assert emergency_record["is_risky"] is True
     assert emergency_record["target_scope"] == "equipment"
-    assert emergency_record["target_component_type"] is None
 
 
 def test_schema_manager_rejects_unknown_required_capability(tmp_path):
@@ -251,8 +265,7 @@ intents:
 version: "1.0"
 devices:
   - id: machine_inspection
-    type: vision_inspection
-    line: line_a
+    line_id: line_a
     aliases: ["검사기"]
     capabilities: ["machine.start"]
     components: []
@@ -263,7 +276,7 @@ devices:
         load_schema(str(intent_path), str(device_path))
 
 
-def test_schema_manager_rejects_component_intent_without_component_type(tmp_path):
+def test_schema_manager_rejects_component_intent_without_component_id_slot(tmp_path):
     intent_path = tmp_path / "intents.yaml"
     device_path = tmp_path / "devices.yaml"
     write_yaml(
@@ -277,7 +290,13 @@ intents:
     required_capability: camera.gain.set
     is_risky: false
     allowed_decisions: ["confirm"]
-    slots: []
+    slots:
+      - name: machine_id
+        type: string
+        required: true
+      - name: line_id
+        type: string
+        required: true
     seed_utterances: []
 """,
     )
@@ -287,17 +306,15 @@ intents:
 version: "1.0"
 devices:
   - id: machine_inspection
-    type: vision_inspection
-    line: line_a
+    line_id: line_a
     aliases: ["검사기"]
     capabilities: []
     components:
       - id: camera
-        type: camera
         aliases: ["카메라"]
         capabilities: ["camera.gain.set"]
 """,
     )
 
-    with pytest.raises(SchemaError, match="component intent must define"):
+    with pytest.raises(SchemaError, match="component intent must define component_id"):
         load_schema(str(intent_path), str(device_path))

@@ -24,7 +24,6 @@ class IntentDef(BaseModel):
     slots: List[SlotDef] = Field(default_factory=list)
     target_scope: TargetScope
     required_capability: str
-    target_component_type: Optional[str] = None
     allowed_decisions: List[Decision]
     seed_utterances: List[str] = Field(default_factory=list)
 
@@ -33,7 +32,6 @@ class IntentDef(BaseModel):
 
 class ComponentDef(BaseModel):
     id: str
-    type: str
     aliases: List[str] = Field(default_factory=list)
     capabilities: List[str] = Field(default_factory=list)
 
@@ -42,8 +40,8 @@ class ComponentDef(BaseModel):
 
 class DeviceDef(BaseModel):
     id: str
-    type: str
-    line: str
+    line_id: str
+    line_aliases: List[str] = Field(default_factory=list)
     aliases: List[str] = Field(default_factory=list)
     capabilities: List[str] = Field(default_factory=list)
     components: List[ComponentDef] = Field(default_factory=list)

@@ -55,6 +55,22 @@ def find_device_ids(text: str, schema_manager: SchemaManager) -> List[str]:
     return [device.id for device in find_device_candidates(text, schema_manager)]
 
 
+def find_line_ids(text: str, schema_manager: SchemaManager) -> List[str]:
+    normalized_text = normalize_text(text)
+    match_text = normalize_match_text(text)
+    line_ids = []
+
+    for device in schema_manager.devices:
+        line_aliases = [device.line_id] + device.line_aliases
+        if any(
+            _matches_alias(normalized_text, match_text, alias)
+            for alias in line_aliases
+        ):
+            line_ids.append(device.line_id)
+
+    return sorted(set(line_ids))
+
+
 def find_component_candidates(text: str, device: DeviceDef) -> List[ComponentDef]:
     normalized_text = normalize_text(text)
     match_text = normalize_match_text(text)

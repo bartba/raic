@@ -11,6 +11,8 @@ def validate_llm_result(
     schema_manager: SchemaManager,
     confidence_high: float = 0.85,
     confidence_low: float = 0.60,
+    allowed_machine_ids: Optional[List[str]] = None,
+    allowed_line_ids: Optional[List[str]] = None,
 ) -> ValidatedResult:
     data, parse_errors = _parse_result(raw_result)
     if parse_errors:
@@ -61,7 +63,13 @@ def validate_llm_result(
             confidence_low=confidence_low,
         )
 
-    slots, slot_errors = _validate_slots(raw_slots, intent, schema_manager)
+    slots, slot_errors = _validate_slots(
+        raw_slots,
+        intent,
+        schema_manager,
+        allowed_machine_ids=allowed_machine_ids,
+        allowed_line_ids=allowed_line_ids,
+    )
     errors = confidence_errors + slot_errors
 
     return ValidatedResult(
@@ -111,6 +119,8 @@ def _validate_slots(
     raw_slots: Dict[str, Any],
     intent: IntentDef,
     schema_manager: SchemaManager,
+    allowed_machine_ids: Optional[List[str]] = None,
+    allowed_line_ids: Optional[List[str]] = None,
 ) -> Tuple[Dict[str, Any], List[str]]:
     slot_defs = {slot.name: slot for slot in intent.slots}
     slots: Dict[str, Any] = {}
@@ -136,7 +146,15 @@ def _validate_slots(
         if not value_errors:
             slots[slot_def.name] = parsed_value
 
-    errors.extend(_validate_target(intent, slots, schema_manager))
+    errors.extend(
+        _validate_target(
+            intent,
+            slots,
+            schema_manager,
+            allowed_machine_ids=allowed_machine_ids,
+            allowed_line_ids=allowed_line_ids,
+        )
+    )
     return slots, errors
 
 
@@ -222,13 +240,32 @@ def _validate_target(
     intent: IntentDef,
     slots: Dict[str, Any],
     schema_manager: SchemaManager,
+    allowed_machine_ids: Optional[List[str]] = None,
+    allowed_line_ids: Optional[List[str]] = None,
 ) -> List[str]:
-    if "machine_id" not in slots:
+    if "machine_id" not in slots or "line_id" not in slots:
         return []
+
+    if (
+        allowed_machine_ids is not None
+        and slots["machine_id"] not in allowed_machine_ids
+    ):
+        return ["machine_id not found in utterance: {0}".format(slots["machine_id"])]
+
+    if allowed_line_ids is not None and slots["line_id"] not in allowed_line_ids:
+        return ["line_id not found in utterance: {0}".format(slots["line_id"])]
 
     device = schema_manager.get_device(slots.get("machine_id"))
     if device is None:
         return ["unknown machine_id: {0}".format(slots.get("machine_id"))]
+
+    if slots.get("line_id") != device.line_id:
+        return [
+            "line_id does not match machine_id: {0} != {1}".format(
+                slots.get("line_id"),
+                device.line_id,
+            )
+        ]
 
     if intent.target_scope == "equipment":
         if intent.required_capability not in device.capabilities:
@@ -244,13 +281,6 @@ def _validate_target(
         return ["unknown component_id: {0}".format(slots.get("component_id"))]
 
     errors = []
-    if component.type != intent.target_component_type:
-        errors.append(
-            "component type mismatch: {0} != {1}".format(
-                component.type, intent.target_component_type
-            )
-        )
-
     if intent.required_capability not in component.capabilities:
         errors.append(
             "component does not support capability: {0}".format(

@@ -17,7 +17,10 @@ class FakePipeline:
             session_id=request.session_id,
             decision="confirm",
             intent="check_status",
-            slots={"machine_id": "machine_inspection"},
+            slots={
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+            },
             confidence="high",
             confidence_score=0.91,
             is_risky=False,
@@ -73,7 +76,10 @@ def test_classify_router_calls_pipeline():
     assert pipeline.request == payload
     assert response.decision == "confirm"
     assert response.intent == "check_status"
-    assert response.slots == {"machine_id": "machine_inspection"}
+    assert response.slots == {
+        "machine_id": "machine_inspection",
+        "line_id": "line_packaging",
+    }
 
 
 def test_classify_router_rejects_when_pipeline_is_not_ready():

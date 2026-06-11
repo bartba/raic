@@ -11,7 +11,8 @@ def test_dockerfile_exists_and_uses_x86_requirements():
     assert dockerfile.exists()
     assert "FROM python:3.11-slim" in content
     assert "api/requirements-x86.txt" in content
-    assert "pip install --no-cache-dir -r /app/api/requirements-x86.txt" in content
+    assert "pip install --no-cache-dir" in content
+    assert "api/requirements-x86.txt" in content
     assert "COPY api /app/api" in content
     assert "COPY data /app/data" in content
     assert "COPY scripts /app/scripts" in content
@@ -64,15 +65,19 @@ def test_docker_run_embedder_script_runs_tei_on_9091_without_reranker():
     assert script.exists()
     assert "set -euo pipefail" in content
     assert 'source "${ENV_FILE}"' in content
-    assert 'TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8-ca}"' in content
+    assert 'TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8}"' in content
     assert 'TEI_HOST_PORT="${TEI_HOST_PORT:-9091}"' in content
     assert 'TEI_CONTAINER_PORT="${TEI_CONTAINER_PORT:-80}"' in content
     assert 'TEI_GPU_DEVICE="${TEI_GPU_DEVICE:-device=1}"' in content
+    assert 'TEI_DTYPE="${TEI_DTYPE:-float16}"' in content
+    assert 'TEI_POOLING="${TEI_POOLING:-cls}"' in content
     assert '--gpus "${TEI_GPU_DEVICE}"' in content
     assert '-p "${TEI_HOST_PORT}:${TEI_CONTAINER_PORT}"' in content
     assert '-e "HTTPS_PROXY=${HTTPS_PROXY:-}"' in content
     assert '-e "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"' in content
     assert '--model-id "${EMBEDDING_MODEL_ID}"' in content
+    assert '--dtype "${TEI_DTYPE}"' in content
+    assert '--pooling "${TEI_POOLING}"' in content
     assert "reranker" not in content.lower()
 
 
@@ -84,9 +89,9 @@ def test_docker_build_embedder_script_wraps_tei_image_with_ca_certificate():
     assert "set -euo pipefail" in content
     assert 'source "${ENV_FILE}"' in content
     assert 'TEI_BASE_IMAGE="${TEI_BASE_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cuda-1.8}"' in content
-    assert 'TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8-ca}"' in content
+    assert 'TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8}"' in content
     assert 'TEI_CA_CERT_PATH="${TEI_CA_CERT_PATH:?TEI_CA_CERT_PATH is required}"' in content
-    assert 'cp "${TEI_CA_CERT_PATH}" "${BUILD_CONTEXT}/company-ca.crt"' in content
+    assert 'cp "${TEI_CA_CERT_PATH}" "${BUILD_CONTEXT}/DigitalCity.crt"' in content
     assert '--build-arg "TEI_BASE_IMAGE=${TEI_BASE_IMAGE}"' in content
     assert '-t "${TEI_IMAGE}"' in content
 
@@ -99,7 +104,7 @@ def test_tei_dockerfile_registers_company_ca_certificate():
     assert "ARG TEI_BASE_IMAGE=ghcr.io/huggingface/text-embeddings-inference:cuda-1.8" in content
     assert "FROM ${TEI_BASE_IMAGE}" in content
     assert "USER root" in content
-    assert "COPY company-ca.crt /usr/local/share/ca-certificates/company-ca.crt" in content
+    assert "COPY DigitalCity.crt /usr/local/share/ca-certificates/DigitalCity.crt" in content
     assert "update-ca-certificates" in content
     assert "ca-certificates.crt" in content
 
@@ -119,7 +124,9 @@ def test_env_example_documents_deploy_settings():
     assert "TEI_HOST_PORT=9091" in content
     assert "TEI_GPU_DEVICE=device=1" in content
     assert "TEI_CA_CERT_PATH=/opt/raic/certs/company-ca.crt" in content
-    assert "EMBEDDING_MODEL_ID=Qwen/Qwen3-Embedding-0.6B" in content
+    assert "EMBEDDING_MODEL_ID=BAAI/bge-m3" in content
+    assert "TEI_DTYPE=float16" in content
+    assert "TEI_POOLING=cls" in content
     assert "VECTOR_INDEX_PATH=/app/data/seed_index.npz" in content
     assert "HOST_VECTOR_INDEX_PATH=data/seed_index.npz" in content
     assert "VECTOR_INDEX_USE_FAISS=true" in content

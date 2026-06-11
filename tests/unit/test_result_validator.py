@@ -19,7 +19,11 @@ def test_validate_llm_result_accepts_valid_dict_and_applies_component_defaults()
     result = validate_llm_result(
         {
             "intent": "set_light_intensity",
-            "slots": {"machine_id": "machine_inspection", "value": 120},
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+                "value": 120,
+            },
             "confidence_score": 0.91,
         },
         load_real_schema(),
@@ -30,6 +34,7 @@ def test_validate_llm_result_accepts_valid_dict_and_applies_component_defaults()
     assert result.confidence == "high"
     assert result.slots == {
         "machine_id": "machine_inspection",
+        "line_id": "line_packaging",
         "component_id": "led_light",
         "value": 120,
     }
@@ -48,14 +53,75 @@ def test_validate_llm_result_rejects_missing_machine_id():
 
     assert result.is_valid is False
     assert result.slots == {"component_id": "led_light", "value": 120}
-    assert result.errors == ["missing required slot: machine_id"]
+    assert result.errors == [
+        "missing required slot: machine_id",
+        "missing required slot: line_id",
+    ]
+
+
+def test_validate_llm_result_rejects_missing_line_id():
+    result = validate_llm_result(
+        {
+            "intent": "set_light_intensity",
+            "slots": {"machine_id": "machine_inspection", "value": 120},
+            "confidence_score": 0.91,
+        },
+        load_real_schema(),
+    )
+
+    assert result.is_valid is False
+    assert result.errors == ["missing required slot: line_id"]
+
+
+def test_validate_llm_result_rejects_line_id_mismatch():
+    result = validate_llm_result(
+        {
+            "intent": "set_light_intensity",
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_wrong",
+                "value": 120,
+            },
+            "confidence_score": 0.91,
+        },
+        load_real_schema(),
+    )
+
+    assert result.is_valid is False
+    assert result.errors == [
+        "line_id does not match machine_id: line_wrong != line_packaging"
+    ]
+
+
+def test_validate_llm_result_rejects_target_not_found_in_utterance_candidates():
+    result = validate_llm_result(
+        {
+            "intent": "set_light_intensity",
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+                "value": 120,
+            },
+            "confidence_score": 0.91,
+        },
+        load_real_schema(),
+        allowed_machine_ids=[],
+        allowed_line_ids=["line_packaging"],
+    )
+
+    assert result.is_valid is False
+    assert result.errors == ["machine_id not found in utterance: machine_inspection"]
 
 
 def test_validate_llm_result_accepts_json_string():
     raw_result = json.dumps(
         {
             "intent": "set_camera_exposure",
-            "slots": {"machine_id": "machine_inspection", "value": "800"},
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+                "value": "800",
+            },
             "confidence_score": 0.82,
         }
     )
@@ -72,7 +138,10 @@ def test_validate_llm_result_accepts_custom_confidence_thresholds():
     result = validate_llm_result(
         {
             "intent": "check_status",
-            "slots": {"machine_id": "machine_inspection"},
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+            },
             "confidence_score": 0.82,
         },
         load_real_schema(),
@@ -110,7 +179,10 @@ def test_validate_llm_result_rejects_missing_required_slot():
     result = validate_llm_result(
         {
             "intent": "set_light_intensity",
-            "slots": {"machine_id": "machine_inspection"},
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+            },
             "confidence_score": 0.9,
         },
         load_real_schema(),
@@ -124,7 +196,11 @@ def test_validate_llm_result_rejects_range_error():
     result = validate_llm_result(
         {
             "intent": "set_light_intensity",
-            "slots": {"machine_id": "machine_inspection", "value": 300},
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+                "value": 300,
+            },
             "confidence_score": 0.9,
         },
         load_real_schema(),
@@ -140,6 +216,7 @@ def test_validate_llm_result_rejects_enum_error():
             "intent": "set_robot_speed",
             "slots": {
                 "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
                 "component_id": "robot",
                 "value": 50,
                 "unit": "rpm",
@@ -159,6 +236,7 @@ def test_validate_llm_result_rejects_wrong_component_target():
             "intent": "set_camera_exposure",
             "slots": {
                 "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
                 "component_id": "led_light",
                 "value": 800,
             },
@@ -168,7 +246,6 @@ def test_validate_llm_result_rejects_wrong_component_target():
     )
 
     assert result.is_valid is False
-    assert "component type mismatch: led_light != camera" in result.errors
     assert "component does not support capability: camera.exposure.set" in result.errors
 
 
@@ -176,7 +253,10 @@ def test_validate_llm_result_rejects_bad_confidence_score():
     result = validate_llm_result(
         {
             "intent": "check_status",
-            "slots": {"machine_id": "machine_inspection"},
+            "slots": {
+                "machine_id": "machine_inspection",
+                "line_id": "line_packaging",
+            },
             "confidence_score": 1.2,
         },
         load_real_schema(),

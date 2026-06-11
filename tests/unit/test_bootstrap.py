@@ -18,7 +18,8 @@ class FakeEmbedder:
 class FakeLLM:
     def generate_json(self, system_prompt, user_prompt):
         return (
-            '{"intent":"check_status","slots":{"machine_id":"machine_inspection"},'
+            '{"intent":"check_status","slots":{"machine_id":"machine_inspection",'
+            '"line_id":"line_packaging"},'
             '"confidence_score":0.91}'
         )
 
@@ -56,7 +57,6 @@ def write_test_index(path):
                 "is_risky": False,
                 "target_scope": "equipment",
                 "required_capability": "machine.status.read",
-                "target_component_type": None,
             }
         ],
         use_faiss=False,

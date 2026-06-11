@@ -90,7 +90,7 @@ command-interpreter/
 | `embedder_client.py` | TEI 임베더 호출 |
 | `vector_store.py` | FAISS 인덱스 생성과 검색 |
 | `prompt_builder.py` | 후보 intent 기반 LLM prompt 구성 |
-| `llm_client.py` | LangChain 기반 외부 LLM 호출과 timeout 처리 |
+| `llm_client.py` | `httpx` 기반 외부 LLM 호출, retry, timeout 처리 |
 | `schema_manager.py` | `load_schema()` 진입점으로 intent/device YAML 로드와 검증 |
 | `result_validator.py` | LLM 결과, slot, 값 범위 검증 |
 | `policy_engine.py` | `execute` / `confirm` / `reject` 결정 |
@@ -164,7 +164,7 @@ def decide(validation, mode):
 | `VECTOR_INDEX_USE_FAISS` | `true` |
 | `RAW_UTTERANCE_LOGGING` | `false` |
 
-LLM 호출은 `langchain-openai`의 `ChatOpenAI`를 기본 adapter로 사용한다. Qwen3.5 계열은 OpenAI-compatible Chat Completions API를 우선 전제로 하며, `LLM_API_URL`은 `/v1`까지 포함한 base URL로 설정한다. 이후 provider 변경이 필요하면 pipeline은 `llm_client.py`의 chat model 주입 지점을 통해 확장한다.
+LLM 호출은 `httpx`로 OpenAI-compatible Chat Completions API를 직접 호출한다. Qwen3.5 계열은 `/v1/chat/completions` endpoint를 우선 전제로 하며, `LLM_API_URL`은 `/v1`까지 포함한 base URL로 설정한다. 일시적 timeout, request error, 5xx 응답은 `LLM_MAX_RETRIES` 범위에서 재시도한다.
 
 ---
 
@@ -262,7 +262,7 @@ Docker 실행은 Ubuntu Linux 20.04 x86 기반 NVIDIA GPU 서버에서 수행한
 | 컨테이너 | 역할 |
 |---|---|
 | `intent-api` | FastAPI API 서버 |
-| `embedder` | Qwen3-Embedding-0.6B TEI 서버 |
+| `embedder` | BGE-M3 TEI 서버 |
 
 `docker/run.sh`는 다음 환경 변수를 받아 실행한다.
 
@@ -309,7 +309,7 @@ x86 GPU 서버에서 수행:
 - 실제 TEI 임베딩 호출
 - FAISS 인덱스 생성과 검색
 - 외부 LLM 연동
-- LangChain `ChatOpenAI`를 통한 Qwen3.5 OpenAI-compatible endpoint 연동
+- `httpx` 기반 Qwen3.5 OpenAI-compatible endpoint 연동
 - `/v1/classify`, `/ready`, `/metrics` 확인
 - E2E 시나리오와 latency 측정
 

@@ -98,8 +98,8 @@ Jetson에서 통과한 테스트는 코드 로직 검증으로만 본다. 실사
 
 - [x] 1.2 최소 의존성 파일 생성
   - 생성: `api/requirements.txt`, `api/requirements-x86.txt`
-  - Jetson 기본 포함: FastAPI, uvicorn, pydantic-settings, httpx, pyyaml, numpy 1.24, prometheus-client, structlog, pytest
-  - x86 서버 추가 포함: faiss-cpu
+  - Jetson 기본 포함: FastAPI, uvicorn, pydantic-settings, httpx, pyyaml, `numpy==1.24.4`, prometheus-client, structlog, pytest
+  - x86 서버 추가 포함: `faiss-cpu==1.8.*`
   - Jetson 테스트: `.venv` 생성 후 기본 의존성 설치와 `pip check` 확인
   - 설명: Jetson 개발환경에서는 ARM/aarch64 호환성이 높은 기본 의존성만 설치하고, 실제 FAISS는 x86 서버에서 확인한다.
 
@@ -344,17 +344,17 @@ Jetson에서 통과한 테스트는 코드 로직 검증으로만 본다. 실사
 
 - [x] 9.2 LLM client 작성
   - 생성: `api/services/llm_client.py`
-  - 내용: LangChain `ChatOpenAI` 기반 OpenAI-compatible `/chat/completions` 호출
-  - Jetson 테스트: fake chat model 주입 테스트
-  - 설명: Qwen3.5 계열 OpenAI-compatible 서버를 우선 염두에 두되, LangChain chat model 주입 구조로 향후 provider 확장을 가능하게 한다.
-  - 완료: `LLMClient`가 LangChain chat model에 system/human prompt를 전달하고 텍스트 content를 반환한다. 실제 LangChain import는 기본 chat model 생성 시점으로 지연하고, 단위 테스트는 fake chat model로 message 전달, text block 추출, 오류 래핑을 검증했다.
+  - 내용: `httpx` 기반 OpenAI-compatible `/chat/completions` 호출
+  - Jetson 테스트: `httpx.Client.post` mock 테스트
+  - 설명: Qwen3.5 계열 OpenAI-compatible 서버를 우선 염두에 두되, 의존성을 줄이기 위해 LangChain adapter 대신 직접 HTTP 호출을 사용한다.
+  - 완료: `LLMClient`가 OpenAI-compatible `/chat/completions` endpoint에 system/user message payload를 POST하고 텍스트 content를 반환한다. 단위 테스트는 request payload, auth header, JSON 파싱, 오류 래핑을 검증했다.
 
 - [x] 9.3 timeout 처리 작성
   - 수정: `llm_client.py`, `embedder_client.py`
   - 내용: timeout 시 명확한 예외 또는 reject 가능한 결과로 변환
   - Jetson 테스트: timeout mock 테스트
   - 설명: 외부 장애가 서버 전체 장애로 번지지 않게 한다.
-  - 완료: `EmbedderClient`는 `httpx.TimeoutException`을 `embedder request timed out`으로, 기타 `httpx.RequestError`를 명확한 요청 실패로 변환한다. `LLMClient`는 `TimeoutError`를 `llm request timed out`으로 분리하고, 그 외 LangChain chat model 오류는 `llm request failed: ...`로 감싼다.
+  - 완료: `EmbedderClient`는 `httpx.TimeoutException`을 `embedder request timed out`으로, 기타 `httpx.RequestError`를 명확한 요청 실패로 변환한다. `LLMClient`는 `httpx.TimeoutException`을 `llm request timed out`으로 분리하고, 기타 `httpx.RequestError`는 `llm request failed: ...`로 감싼다. 서버 오류와 일시적 네트워크 오류는 `LLM_MAX_RETRIES` 범위에서 재시도한다.
 
 완료 기준:
 

@@ -38,7 +38,12 @@ def test_classify_response_accepts_prd_shape():
         session_id="ses-001",
         decision="confirm",
         intent="set_speed",
-        slots={"machine_id": "conveyor_3", "value": 200, "unit": "rpm"},
+        slots={
+            "machine_id": "conveyor_3",
+            "line_id": "line_1",
+            "value": 200,
+            "unit": "rpm",
+        },
         confidence="high",
         confidence_score=0.92,
         is_risky=False,
@@ -56,7 +61,6 @@ def test_schema_models_can_be_created():
         name="set_speed",
         description="장비 속도 설정",
         target_scope="component",
-        target_component_type="robot",
         required_capability="robot.speed.set",
         is_risky=False,
         slots=[slot],
@@ -65,14 +69,12 @@ def test_schema_models_can_be_created():
     )
     component = ComponentDef(
         id="robot",
-        type="robot",
         aliases=["로봇"],
         capabilities=["robot.speed.set"],
     )
     device = DeviceDef(
         id="conveyor_3",
-        type="conveyor",
-        line="line_1",
+        line_id="line_1",
         aliases=["3번 컨베이어"],
         capabilities=["machine.status.read"],
         components=[component],
@@ -80,7 +82,7 @@ def test_schema_models_can_be_created():
     candidate = Candidate(intent="set_speed", score=0.91, seed_utterance="속도 올려")
     validated = ValidatedResult(
         intent="set_speed",
-        slots={"machine_id": "conveyor_3"},
+        slots={"machine_id": "conveyor_3", "line_id": "line_1"},
         confidence="high",
         confidence_score=0.91,
     )

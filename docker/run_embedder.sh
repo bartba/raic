@@ -12,12 +12,14 @@ if [ -f "${ENV_FILE}" ]; then
   set +a
 fi
 
-TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8-ca}"
+TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8}"
 TEI_CONTAINER_NAME="${TEI_CONTAINER_NAME:-tei-embedder}"
 TEI_HOST_PORT="${TEI_HOST_PORT:-9091}"
 TEI_CONTAINER_PORT="${TEI_CONTAINER_PORT:-80}"
 TEI_GPU_DEVICE="${TEI_GPU_DEVICE:-device=1}"
-EMBEDDING_MODEL_ID="${EMBEDDING_MODEL_ID:-Qwen/Qwen3-Embedding-0.6B}"
+EMBEDDING_MODEL_ID="${EMBEDDING_MODEL_ID:-BAAI/bge-m3}"
+TEI_DTYPE="${TEI_DTYPE:-float16}"
+TEI_POOLING="${TEI_POOLING:-cls}"
 
 docker rm -f "${TEI_CONTAINER_NAME}" >/dev/null 2>&1 || true
 
@@ -34,4 +36,8 @@ docker run -d \
   -e "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt" \
   -e "REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt" \
   "${TEI_IMAGE}" \
-  --model-id "${EMBEDDING_MODEL_ID}"
+  --model-id "${EMBEDDING_MODEL_ID}" \
+  --dtype "${TEI_DTYPE}" \
+  --pooling "${TEI_POOLING}" \
+  --max-batch-tokens 65536 \
+  --auto-truncate

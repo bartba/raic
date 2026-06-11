@@ -13,7 +13,7 @@ if [ -f "${ENV_FILE}" ]; then
 fi
 
 TEI_BASE_IMAGE="${TEI_BASE_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cuda-1.8}"
-TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8-ca}"
+TEI_IMAGE="${TEI_IMAGE:-raic-tei-embedder:cuda-1.8}"
 TEI_CA_CERT_PATH="${TEI_CA_CERT_PATH:?TEI_CA_CERT_PATH is required}"
 
 if [ ! -f "${TEI_CA_CERT_PATH}" ]; then
@@ -28,7 +28,7 @@ cleanup() {
 trap cleanup EXIT
 
 cp "${SCRIPT_DIR}/Dockerfile.tei" "${BUILD_CONTEXT}/Dockerfile"
-cp "${TEI_CA_CERT_PATH}" "${BUILD_CONTEXT}/company-ca.crt"
+cp "${TEI_CA_CERT_PATH}" "${BUILD_CONTEXT}/DigitalCity.crt"
 
 docker build \
   --build-arg "TEI_BASE_IMAGE=${TEI_BASE_IMAGE}" \

@@ -1,4 +1,7 @@
-from typing import Any, Optional
+import json
+from typing import Optional
+
+import httpx
 
 
 class LLMClientError(RuntimeError):
@@ -13,64 +16,81 @@ class LLMClient:
         api_key: Optional[str] = None,
         timeout_ms: int = 800,
         max_retries: int = 0,
-        chat_model: Optional[Any] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.model_name = model_name
         self.api_key = api_key
-        self.timeout_seconds = timeout_ms / 1000.0
-        self.max_retries = max_retries
-        self.chat_model = chat_model or self._build_chat_model()
+        self.timeout_ms = timeout_ms
+        self.timeout = httpx.Timeout(
+            timeout=timeout_ms / 1000.0,
+            connect=timeout_ms / 1000.0,
+            read=timeout_ms / 1000.0,
+            write=timeout_ms / 1000.0,
+            pool=timeout_ms / 1000.0,
+        )
+        self.max_retries = max(0, max_retries)
 
     def generate_json(self, system_prompt: str, user_prompt: str) -> str:
-        try:
-            response = self.chat_model.invoke(
-                [
-                    ("system", system_prompt),
-                    ("human", user_prompt),
-                ]
-            )
-        except TimeoutError as error:
-            raise LLMClientError("llm request timed out") from error
-        except Exception as error:
-            raise LLMClientError("llm request failed: {0}".format(error)) from error
+        url = f"{self.base_url}/chat/completions"
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
 
-        return _extract_text_content(response)
+        payload = {
+            "model": self.model_name,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "max_tokens": 2048,
+            "stream": False,
+        }
 
-    def _build_chat_model(self) -> Any:
-        try:
-            from langchain_openai import ChatOpenAI
-        except ImportError as error:
+        with httpx.Client(timeout=self.timeout) as client:
+            response = self._post_with_retries(client, url, headers, payload)
+
+        if response.status_code >= 400:
             raise LLMClientError(
-                "langchain-openai is required to use LLMClient without a chat_model"
-            ) from error
+                f"llm request failed with status {response.status_code}: {response.text[:200]}"
+            )
 
-        return ChatOpenAI(
-            base_url=self.base_url,
-            api_key=self.api_key or "unused",
-            model=self.model_name,
-            timeout=self.timeout_seconds,
-            max_retries=self.max_retries,
-        )
+        try:
+            data = response.json()
+        except json.JSONDecodeError as error:
+            raise LLMClientError("llm response is not valid JSON") from error
 
+        try:
+            content = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError) as error:
+            raise LLMClientError("llm response missing expected fields") from error
 
-def _extract_text_content(response: Any) -> str:
-    content = getattr(response, "content", response)
-    if isinstance(content, str):
-        if not content:
-            raise LLMClientError("llm response content is empty")
+        if not content or not isinstance(content, str):
+            raise LLMClientError("llm response content is empty or invalid")
+
         return content
 
-    if isinstance(content, list):
-        text_parts = []
-        for item in content:
-            if isinstance(item, str):
-                text_parts.append(item)
-            elif isinstance(item, dict) and isinstance(item.get("text"), str):
-                text_parts.append(item["text"])
+    def _post_with_retries(
+        self,
+        client: httpx.Client,
+        url: str,
+        headers: dict,
+        payload: dict,
+    ) -> httpx.Response:
+        attempts = self.max_retries + 1
 
-        text = "".join(text_parts)
-        if text:
-            return text
+        for attempt in range(attempts):
+            try:
+                response = client.post(url, headers=headers, json=payload)
+            except httpx.TimeoutException as error:
+                if attempt < self.max_retries:
+                    continue
+                raise LLMClientError("llm request timed out") from error
+            except httpx.RequestError as error:
+                if attempt < self.max_retries:
+                    continue
+                raise LLMClientError(f"llm request failed: {error}") from error
 
-    raise LLMClientError("llm response content must be text")
+            if response.status_code < 500 or attempt == self.max_retries:
+                return response
+
+        raise LLMClientError("llm request failed")

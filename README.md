@@ -30,7 +30,7 @@ HTML 문서는 `docs/html/` 아래에 있습니다.
 ```text
 STT 텍스트
   -> 정규화 / 장비명 해석
-  -> Qwen3-Embedding-0.6B 임베딩
+  -> BGE-M3 임베딩
   -> FAISS Top-K 검색
   -> 외부 LLM 후보 선택 + slot 추출
   -> 스키마 검증 / 정책 결정

@@ -27,4 +27,5 @@ fi
 
 "${PYTHON_BIN}" "${SCRIPT_DIR}/build_index.py" \
   --embedder-url "${HOST_EMBEDDER_URL}" \
-  --output-path "${HOST_VECTOR_INDEX_PATH}"
+  --output-path "${HOST_VECTOR_INDEX_PATH}" \
+  "$@"
